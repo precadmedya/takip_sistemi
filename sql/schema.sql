@@ -1,0 +1,48 @@
+CREATE TABLE customers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  full_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  company VARCHAR(255),
+  address TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE services (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_id INT NOT NULL,
+  service_type VARCHAR(50),
+  start_date DATE,
+  duration INT,
+  unit VARCHAR(10),
+  price DECIMAL(10,2),
+  currency VARCHAR(10),
+  vat_rate DECIMAL(5,2),
+  status VARCHAR(20),
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE exchange_rates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  rate_date DATE,
+  usd_try DECIMAL(10,4),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(100) UNIQUE,
+  password VARCHAR(255),
+  role ENUM('admin','user') DEFAULT 'admin',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE settings (
+  `key` VARCHAR(50) PRIMARY KEY,
+  value TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO users (email, password, role) VALUES
+('info@precadmedya.com.tr', '$2y$12$g0QsFECHVjIwr2WhxPLLV.i/wskHA2S0VuZY0bowUph3KdXmaZ3MS', 'admin');
