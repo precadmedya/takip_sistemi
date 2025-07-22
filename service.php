@@ -43,7 +43,7 @@ include __DIR__.'/includes/header.php';
 <table class="table table-bordered">
  <thead>
   <tr>
-   <th>Ad</th><th>Miktar</th><th>Birim</th><th>Birim Fiyat</th><th>Döviz</th><th>Sağlayıcı</th><th>KDV</th>
+   <th>Ad</th><th>Miktar</th><th>Birim</th><th>Birim Fiyat</th><th>Döviz</th><th>Sağlayıcı</th><th>KDV</th><th>Açıklama</th><th>Toplam (TL)</th>
   </tr>
  </thead>
  <tbody>
@@ -56,6 +56,9 @@ include __DIR__.'/includes/header.php';
    <td><?= htmlspecialchars($it['currency']) ?></td>
    <td><?= htmlspecialchars($it['provider_name']) ?></td>
    <td><?= $it['vat_rate'] ?>%</td>
+   <td><?= htmlspecialchars($it['description']) ?></td>
+   <?php $ls=$it['quantity']*$it['unit_price'];$lv=$ls*$it['vat_rate']/100;$lt=($it['currency']=='USD'?($ls+$lv)*$usdRate:($ls+$lv)); ?>
+   <td><?= number_format($lt,2,',','.') ?></td>
   </tr>
   <?php endforeach; ?>
  </tbody>

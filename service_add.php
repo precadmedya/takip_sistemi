@@ -41,8 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
     $serviceId = $pdo->lastInsertId();
     if(!empty($_POST['item_name'])){
-        $itemStmt = $pdo->prepare('INSERT INTO service_items (service_id,item_name,quantity,unit,unit_price,vat_rate,currency,provider_id) VALUES (?,?,?,?,?,?,?,?)');
-        foreach($_POST['item_name'] as $i => $name){
+        $itemStmt = $pdo->prepare('INSERT INTO service_items (service_id,item_name,quantity,unit,unit_price,vat_rate,currency,provider_id,description) VALUES (?,?,?,?,?,?,?,?,?)');
+        foreach($_POST['item_name'] as $i => $n){
+            $name = $n==='__new__' ? ($_POST['item_custom'][$i] ?? '') : $n;
             if(trim($name)==='') continue;
             $itemStmt->execute([
                 $serviceId,
@@ -52,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 (float)($_POST['unit_price'][$i] ?? 0),
                 (float)($_POST['item_vat'][$i] ?? 0),
                 $_POST['item_currency'][$i] ?? 'TRY',
-                $_POST['provider_item'][$i] ?? null
+                $_POST['provider_item'][$i] ?? null,
+                $_POST['description'][$i] ?? ''
             ]);
         }
     }
@@ -114,6 +116,7 @@ include __DIR__.'/includes/header.php';
         <th>Döviz</th>
         <th>Sağlayıcı</th>
         <th>KDV</th>
+        <th>Açıklama</th>
         <th>Toplam</th>
         <th></th>
       </tr>
@@ -138,7 +141,7 @@ var newProducts = [];
 function addRow(){
   var tbody=document.querySelector('#items tbody');
   var tr=document.createElement('tr');
-  tr.innerHTML='<td><select name="item_name[]" class="form-control prod"><option value="">Seçiniz</option>'+productOptions+'</select><input type="text" name="item_custom[]" class="form-control mt-2 d-none custom"></td>'+
+  tr.innerHTML='<td><select name="item_name[]" class="form-control prod"><option value="">Seçiniz</option>'+productOptions+'</select><input type="text" name="item_custom[]" class="form-control mt-2 d-none custom" placeholder="Ürün adı"></td>'+
     '<td><input type="number" name="quantity[]" value="1" class="form-control qty"></td>'+
     '<td><select name="unit[]" class="form-control unit">'+
       '<option value="adet">Adet</option><option value="ay">Ay</option><option value="yıl">Yıl</option>'+
@@ -149,6 +152,7 @@ function addRow(){
     '<td><select name="item_vat[]" class="form-control vat">'+
        '<option value="0">%0</option><option value="1">%1</option><option value="10">%10</option><option value="20">%20</option>'+
     '</select></td>'+
+    '<td><input type="text" name="description[]" class="form-control desc"></td>'+
     '<td class="row-total">0</td>'+
     '<td><button type="button" class="btn btn-sm btn-danger remove-row">X</button></td>';
   tbody.appendChild(tr);
@@ -165,25 +169,20 @@ function addRow(){
 function prodChanged(){
   var select=this;
   var tr=select.closest('tr');
+  var custom=tr.querySelector('.custom');
   var opt=select.options[select.selectedIndex];
   if(select.value==='__new__'){
-    var name=prompt('Ürün adı');
-    if(!name){select.value='';return;}
-    var price=parseFloat(prompt('Fiyat', '0'))||0;
-    var currency=prompt('Döviz (TRY/USD)','TRY')||'TRY';
-    var vat=parseFloat(prompt('KDV Oranı (%)','0'))||0;
-    var unit=tr.querySelector('.unit').value;
-    var option=new Option(name,name); option.dataset.price=price; option.dataset.currency=currency; option.dataset.vat=vat;
-    select.insertBefore(option, select.querySelector('option[value="__new__"]'));
-    select.value=name;
-    newProducts.push({name:name,unit:unit,vat_rate:vat,price:price,currency:currency});
-    document.getElementById('new_products_json').value=JSON.stringify(newProducts);
-    opt=option;
-  }
-  if(opt.dataset){
-    tr.querySelector('.price').value=opt.dataset.price||'';
-    tr.querySelector('.row-currency').value=opt.dataset.currency||'TRY';
-    tr.querySelector('.vat').value=opt.dataset.vat||'0';
+    custom.classList.remove('d-none');
+    tr.querySelector('.price').value='';
+    tr.querySelector('.row-currency').value='TRY';
+    tr.querySelector('.vat').value='0';
+  }else{
+    custom.classList.add('d-none');
+    if(opt.dataset){
+      tr.querySelector('.price').value=opt.dataset.price||'';
+      tr.querySelector('.row-currency').value=opt.dataset.currency||'TRY';
+      tr.querySelector('.vat').value=opt.dataset.vat||'0';
+    }
   }
   updateTotal();
 }
@@ -219,6 +218,23 @@ document.getElementById('start').addEventListener('change',function(){
 document.getElementById('addRow').addEventListener('click',addRow);
 addRow();
 updateTotal();
+document.querySelector('form').addEventListener('submit',function(){
+  newProducts=[];
+  document.querySelectorAll('#items tbody tr').forEach(function(tr){
+    if(tr.querySelector('.prod').value==='__new__'){
+      var name=tr.querySelector('.custom').value.trim();
+      if(!name) return;
+      newProducts.push({
+        name:name,
+        unit:tr.querySelector('.unit').value,
+        vat_rate:tr.querySelector('.vat').value,
+        price:tr.querySelector('.price').value,
+        currency:tr.querySelector('.row-currency').value
+      });
+    }
+  });
+  document.getElementById('new_products_json').value=JSON.stringify(newProducts);
+});
 </script>
 <div class="mb-5"></div>
 <?php include __DIR__.'/includes/footer.php'; ?>

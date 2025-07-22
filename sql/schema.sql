@@ -57,6 +57,7 @@ CREATE TABLE service_items (
   vat_rate DECIMAL(5,2),
   currency VARCHAR(10),
   provider_id INT,
+  description TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
   FOREIGN KEY (provider_id) REFERENCES providers(id)

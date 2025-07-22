@@ -28,10 +28,10 @@ Bu proje, domain ve hosting hizmetlerini takip etmek için basit bir PHP panelid
  - `/service_payment.php` – Hizmet tahsilatı ve yenileme
    (mevcut borcu görüntüler ve ödeme sonrası uzatma seçeneği sunar)
  - `/service_add.php` – Hizmet ekleme formu. Ürün satırında seçim yapıldığında fiyat, döviz ve KDV otomatik dolar.
-   Listede olmayan ürünler eklenmek istendiğinde form, ürünü ürünler sayfasına kaydetmeyi teklif eder. Satırlardan elde edilen toplam otomatik hesaplanır.
+  Satırlarda "Açıklama" alanı bulunur ve "+ Özel Ürün" seçildiğinde bilgiler doğrudan satırdan yazılarak kaydedilebilir. İstenirse bu ürünler otomatik olarak ürünler listesine eklenir.
  - `/service_edit.php` – Hizmet düzenleme
  - `/service_delete.php` – Hizmet silme
- - `/service.php` – Hizmet detayları ve tahsilat geçmişi
+ - `/service.php` – Hizmet detayları, ek kalem tablosu ve tahsilat geçmişi
 - `/payment_edit.php` – Tahsilat düzenleme
 - `/payment_delete.php` – Tahsilat silme
 - `/products.php` – Ürün yönetimi
@@ -54,7 +54,7 @@ Tüm arayüz Türkçe olup Bootstrap 5 kullanılarak oluşturulmuştur. Sayfalar
 Logo yükleme sayfasında giriş ve üst menüde kullanılacak logonun boyutları ayarlanabilir.
 
 Veritabanında `payments` tablosu tahsilat kayıtlarını tutar ve `exchange_rates` tablosundaki güncel dolar kuru kullanılarak USD tahsilatları otomatik TL'ye çevrilir.
-Her hizmet için ek kalemlerin saklandığı `service_items` tablosu da bulunmaktadır. Bu tabloda artık her kalemin döviz türü ve sağlayıcısı da saklanır.
+Her hizmet için ek kalemlerin saklandığı `service_items` tablosu da bulunmaktadır. Bu tabloda her kalemin döviz türü, sağlayıcı bilgisi ve açıklaması saklanır.
 Hizmet kayıtlarında hem orijinal para birimi hem de TL karşılığı saklanır ve ödeme tarihi alanı bulunur.
 
 Dashboard sayfasında aylık görünümlü bir takvim ile yaklaşan hizmet bitişleri aynı sayfada iki sütun olarak gösterilir. Takvimde hizmet tarihi olan günler renkli çubuklarla işaretlenir ve tıklandığında o güne ait hizmetler modal pencerede açılır. Sağdaki listede en yakın on hizmet bitişi arama kutusuyla filtrelenebilir. Alt bölümde en çok satan ve son eklenen hizmetler yer alır.
