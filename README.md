@@ -27,7 +27,8 @@ Bu proje, domain ve hosting hizmetlerini takip etmek için basit bir PHP panelid
  - `/services.php` – Hizmet listesi
  - `/service_payment.php` – Hizmet tahsilatı ve yenileme
    (mevcut borcu görüntüler ve ödeme sonrası uzatma seçeneği sunar)
- - `/service_add.php` – Hizmet ekleme formu (başlangıç ve ödeme tarihleri seçilebilir)
+- `/service_add.php` – Hizmet ekleme formu (başlangıç ve ödeme tarihleri seçilebilir)
+  (formun altında hizmet/ürün satırları ekleyerek faturaya benzer kalemler oluşturabilirsiniz)
  - `/service_edit.php` – Hizmet düzenleme
  - `/service_delete.php` – Hizmet silme
  - `/service.php` – Hizmet detayları ve tahsilat geçmişi
@@ -53,6 +54,7 @@ Tüm arayüz Türkçe olup Bootstrap 5 kullanılarak oluşturulmuştur. Sayfalar
 Logo yükleme sayfasında giriş ve üst menüde kullanılacak logonun boyutları ayarlanabilir.
 
 Veritabanında `payments` tablosu tahsilat kayıtlarını tutar ve `exchange_rates` tablosundaki güncel dolar kuru kullanılarak USD tahsilatları otomatik TL'ye çevrilir.
+Her hizmet için ek kalemlerin saklandığı `service_items` tablosu da bulunmaktadır.
 Hizmet kayıtlarında hem orijinal para birimi hem de TL karşılığı saklanır ve ödeme tarihi alanı bulunur.
 
 Dashboard sayfasında aylık görünümlü bir takvim ile yaklaşan hizmet bitişleri aynı sayfada iki sütun olarak gösterilir. Takvimde hizmet tarihi olan günler renkli çubuklarla işaretlenir ve tıklandığında o güne ait hizmetler modal pencerede açılır. Sağdaki listede en yakın on hizmet bitişi arama kutusuyla filtrelenebilir. Alt bölümde en çok satan ve son eklenen hizmetler yer alır.

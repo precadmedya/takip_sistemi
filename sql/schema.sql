@@ -47,6 +47,18 @@ CREATE TABLE services (
   FOREIGN KEY (provider_id) REFERENCES providers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE service_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  service_id INT NOT NULL,
+  item_name VARCHAR(255),
+  quantity INT DEFAULT 1,
+  unit VARCHAR(20),
+  unit_price DECIMAL(10,2),
+  vat_rate DECIMAL(5,2),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE exchange_rates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   rate_date DATE,

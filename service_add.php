@@ -30,6 +30,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['status'],
         $_POST['notes']
     ]);
+    $serviceId = $pdo->lastInsertId();
+    if(!empty($_POST['item_name'])){
+        $itemStmt = $pdo->prepare('INSERT INTO service_items (service_id,item_name,quantity,unit,unit_price,vat_rate) VALUES (?,?,?,?,?,?)');
+        foreach($_POST['item_name'] as $i => $name){
+            if(trim($name)==='') continue;
+            $itemStmt->execute([
+                $serviceId,
+                $name,
+                (int)($_POST['quantity'][$i] ?? 1),
+                $_POST['unit'][$i] ?? '',
+                (float)($_POST['unit_price'][$i] ?? 0),
+                (float)($_POST['item_vat'][$i] ?? 0)
+            ]);
+        }
+    }
     header('Location: /services.php');
     exit;
 }
@@ -106,6 +121,24 @@ include __DIR__.'/includes/header.php';
     <label class="form-label">Not</label>
     <textarea name="notes" class="form-control"></textarea>
   </div>
+
+  <h3>Hizmet / Ürün Detayı</h3>
+  <table class="table" id="items">
+    <thead>
+      <tr>
+        <th>Hizmet / Ürün</th>
+        <th>Miktar</th>
+        <th>Birim</th>
+        <th>Birim Fiyat</th>
+        <th>KDV</th>
+        <th>Toplam</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button type="button" class="btn btn-secondary mb-3" id="addRow">Satır Ekle</button>
+
   <div class="mb-3">
     <strong>Toplam Tutar (TL): <span id="total">0</span></strong><br>
     <strong>KDV Tutarı (TL): <span id="vat_t">0</span></strong><br>
@@ -125,16 +158,51 @@ function updateFromProduct(){
     updateTotal();
   }
 }
+function addRow(){
+  var tbody=document.querySelector('#items tbody');
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td><input type="text" name="item_name[]" class="form-control"></td>'+
+    '<td><input type="number" name="quantity[]" value="1" class="form-control qty"></td>'+
+    '<td><select name="unit[]" class="form-control unit">'+
+      '<option value="adet">Adet</option><option value="ay">Ay</option><option value="yıl">Yıl</option>'+
+    '</select></td>'+
+    '<td><input type="text" name="unit_price[]" class="form-control price"></td>'+
+    '<td><select name="item_vat[]" class="form-control vat">'+
+       '<option value="0">%0</option><option value="1">%1</option><option value="10">%10</option><option value="20">%20</option>'+
+    '</select></td>'+
+    '<td class="row-total">0</td>'+
+    '<td><button type="button" class="btn btn-sm btn-danger remove-row">X</button></td>';
+  tbody.appendChild(tr);
+  tr.querySelector('.remove-row').addEventListener('click',function(){tr.remove();updateTotal();});
+  ['input','change'].forEach(function(ev){
+     tr.querySelector('.qty').addEventListener(ev,updateTotal);
+     tr.querySelector('.price').addEventListener(ev,updateTotal);
+     tr.querySelector('.vat').addEventListener(ev,updateTotal);
+  });
+  updateTotal();
+}
 function updateTotal(){
   var rate = <?= $usdRate ? $usdRate : 0 ?>;
+  var cur = document.getElementById('currency').value;
   var price = parseFloat(document.getElementById('price').value)||0;
   var vat = parseFloat(document.getElementById('vat').value)||0;
-  var cur = document.getElementById('currency').value;
-  var tl = cur==='USD' ? price*rate : price;
-  var vatTl = tl*vat/100;
-  document.getElementById('total').innerText=tl.toFixed(2);
+  var subCur = price;
+  var vatCur = price*vat/100;
+  document.querySelectorAll('#items tbody tr').forEach(function(tr){
+    var q = parseFloat(tr.querySelector('.qty').value)||0;
+    var p = parseFloat(tr.querySelector('.price').value)||0;
+    var v = parseFloat(tr.querySelector('.vat').value)||0;
+    var lineSub = q*p;
+    var lineVat = lineSub*v/100;
+    tr.querySelector('.row-total').innerText=(lineSub+lineVat).toFixed(2);
+    subCur += lineSub;
+    vatCur += lineVat;
+  });
+  var totalTl = cur==='USD' ? subCur*rate : subCur;
+  var vatTl = cur==='USD' ? vatCur*rate : vatCur;
+  document.getElementById('total').innerText=totalTl.toFixed(2);
   document.getElementById('vat_t').innerText=vatTl.toFixed(2);
-  document.getElementById('grand').innerText=(tl+vatTl).toFixed(2);
+  document.getElementById('grand').innerText=(totalTl+vatTl).toFixed(2);
 }
 document.getElementById('product').addEventListener('change',updateFromProduct);
 document.getElementById('price').addEventListener('input',updateTotal);
@@ -149,6 +217,8 @@ document.getElementById('start').addEventListener('change',function(){
     }
   }
 });
+document.getElementById('addRow').addEventListener('click',addRow);
+addRow();
 updateTotal();
 </script>
 <?php include __DIR__.'/includes/footer.php'; ?>

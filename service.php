@@ -13,6 +13,9 @@ $usdRate = getUsdRate($pdo);
 $priceTl = $service['currency']==='USD' ? $service['price']*$usdRate : $service['price'];
 $vatTl = $priceTl * $service['vat_rate']/100;
 $grand = $priceTl + $vatTl;
+$items = $pdo->prepare('SELECT * FROM service_items WHERE service_id=?');
+$items->execute([$service['id']]);
+$items = $items->fetchAll(PDO::FETCH_ASSOC);
 include __DIR__.'/includes/header.php';
 ?>
 <h1>Hizmet Detayı</h1>
@@ -35,6 +38,27 @@ include __DIR__.'/includes/header.php';
 <tr><th>Durum</th><td><?= htmlspecialchars($service['status']) ?></td></tr>
 <tr><th>Not</th><td><?= nl2br(htmlspecialchars($service['notes'])) ?></td></tr>
 </table>
+<?php if($items): ?>
+<h2>Hizmet / Ürün Detayı</h2>
+<table class="table table-bordered">
+ <thead>
+  <tr>
+   <th>Ad</th><th>Miktar</th><th>Birim</th><th>Birim Fiyat</th><th>KDV</th>
+  </tr>
+ </thead>
+ <tbody>
+  <?php foreach($items as $it): ?>
+  <tr>
+   <td><?= htmlspecialchars($it['item_name']) ?></td>
+   <td><?= $it['quantity'] ?></td>
+   <td><?= htmlspecialchars($it['unit']) ?></td>
+   <td><?= number_format($it['unit_price'],2,',','.') ?></td>
+   <td><?= $it['vat_rate'] ?>%</td>
+  </tr>
+  <?php endforeach; ?>
+ </tbody>
+</table>
+<?php endif; ?>
 <?php
 $payStmt = $pdo->prepare('SELECT * FROM payments WHERE service_id=? ORDER BY id DESC');
 $payStmt->execute([$service['id']]);
