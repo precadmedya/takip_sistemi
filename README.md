@@ -27,8 +27,8 @@ Bu proje, domain ve hosting hizmetlerini takip etmek için basit bir PHP panelid
  - `/services.php` – Hizmet listesi
  - `/service_payment.php` – Hizmet tahsilatı ve yenileme
    (mevcut borcu görüntüler ve ödeme sonrası uzatma seçeneği sunar)
-- `/service_add.php` – Hizmet ekleme formu (başlangıç ve ödeme tarihleri seçilebilir)
-  (formun altında hizmet/ürün satırları ekleyerek faturaya benzer kalemler oluşturabilirsiniz)
+ - `/service_add.php` – Hizmet ekleme formu. Ürün satırında seçim yapıldığında fiyat, döviz ve KDV otomatik dolar.
+   Listede olmayan ürünler eklenmek istendiğinde form, ürünü ürünler sayfasına kaydetmeyi teklif eder. Satırlardan elde edilen toplam otomatik hesaplanır.
  - `/service_edit.php` – Hizmet düzenleme
  - `/service_delete.php` – Hizmet silme
  - `/service.php` – Hizmet detayları ve tahsilat geçmişi
