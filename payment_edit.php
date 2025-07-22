@@ -7,7 +7,7 @@ $stmt = $pdo->prepare('SELECT * FROM payments WHERE id=?');
 $stmt->execute([$id]);
 $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$payment){
-    header('Location: /services.php');
+    header('Location: services.php');
     exit;
 }
 $usdRate = getUsdRate($pdo);
@@ -18,7 +18,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $amount_try = $currency==='USD' ? $amount*$usdRate : $amount;
     $stmt = $pdo->prepare('UPDATE payments SET amount_try=?, amount_orig=?, currency=? WHERE id=?');
     $stmt->execute([$amount_try,$amount,$currency,$id]);
-    $redirect = $payment['service_id'] ? '/service.php?id='.$payment['service_id'] : '/customers.php';
+    $redirect = $payment['service_id'] ? 'service.php?id='.$payment['service_id'] : 'customers.php';
     header('Location: '.$redirect);
     exit;
 }

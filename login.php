@@ -3,7 +3,7 @@ require __DIR__ . '/includes/db.php';
 session_start();
 
 if (isset($_SESSION['user_id']) && (time() - ($_SESSION['last_active'] ?? 0) < 1800)) {
-    header('Location: /dashboard.php');
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user && password_verify($_POST['password'], $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['last_active'] = time();
-        header('Location: /dashboard.php');
+        header('Location: dashboard.php');
         exit;
     } else {
         $error = 'Giriş Bilgileri Hatalı';

@@ -118,7 +118,7 @@ include __DIR__.'/includes/header.php';
             $cls=$diff<0?'bg-danger':($diff<=14?'bg-orange':($diff<=30?'bg-warning':'bg-success'));
             $txt=$diff>=0?'+'.$diff.' gün kaldı':abs($diff).' gün geçti';
       ?>
-      <a href="/service.php?id=<?= $u['id'] ?>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-search="<?= strtolower($u['site_name'].' '.$u['full_name']) ?>">
+      <a href="service.php?id=<?= $u['id'] ?>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-search="<?= strtolower($u['site_name'].' '.$u['full_name']) ?>">
         <span>
           <strong><?= htmlspecialchars($u['site_name']) ?></strong><br>
           <small><?= htmlspecialchars($u['full_name']) ?></small>
@@ -149,7 +149,7 @@ include __DIR__.'/includes/header.php';
   <h4>Son Eklenen Hizmetler</h4>
   <ul>
    <?php foreach($recent as $r): ?>
-    <li><a href="/service.php?id=<?= $r['id'] ?>"><?= htmlspecialchars($r['full_name'].' - '.$r['site_name']) ?></a></li>
+    <li><a href="service.php?id=<?= $r['id'] ?>"><?= htmlspecialchars($r['full_name'].' - '.$r['site_name']) ?></a></li>
    <?php endforeach; ?>
   </ul>
  </div>

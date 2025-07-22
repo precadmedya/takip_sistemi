@@ -7,7 +7,7 @@ $stmt = $pdo->prepare('SELECT * FROM customers WHERE id=?');
 $stmt->execute([$id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$customer){
-    header('Location: /customers.php');
+    header('Location: customers.php');
     exit;
 }
 
@@ -48,10 +48,10 @@ include __DIR__.'/includes/header.php';
 <p>Telefon: <?= htmlspecialchars($customer['phone']) ?></p>
 <p>Şirket: <?= htmlspecialchars($customer['company']) ?></p>
 <p>Adres: <?= nl2br(htmlspecialchars($customer['address'])) ?></p>
-<a href="/customer_payment.php?customer_id=<?= $id ?>" class="btn btn-success mb-3">Tahsilat Yap</a>
-<a href="/customer_edit.php?id=<?= $id ?>" class="btn btn-warning mb-3">Düzenle</a>
-<a href="/customer_delete.php?id=<?= $id ?>" class="btn btn-danger mb-3" onclick="return confirm('Silinsin mi?');">Sil</a>
-<a href="/customer_statement.php?id=<?= $id ?>" class="btn btn-secondary mb-3">Ekstre İndir</a>
+<a href="customer_payment.php?customer_id=<?= $id ?>" class="btn btn-success mb-3">Tahsilat Yap</a>
+<a href="customer_edit.php?id=<?= $id ?>" class="btn btn-warning mb-3">Düzenle</a>
+<a href="customer_delete.php?id=<?= $id ?>" class="btn btn-danger mb-3" onclick="return confirm('Silinsin mi?');">Sil</a>
+<a href="customer_statement.php?id=<?= $id ?>" class="btn btn-secondary mb-3">Ekstre İndir</a>
 <div class="row mb-4">
  <div class="col-md-6">
   <div class="card text-bg-light mb-3">
@@ -95,10 +95,10 @@ include __DIR__.'/includes/header.php';
    <td><?= number_format($s['paid_try'],2,',','.') ?> ₺</td>
    <td><?= number_format($s['remaining'],2,',','.') ?> ₺</td>
    <td>
-    <a href="/service.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-info">Detay</a>
-    <a href="/service_payment.php?service_id=<?= $s['id'] ?>" class="btn btn-sm btn-primary">Tahsilat</a>
-    <a href="/service_edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
-    <a href="/service_delete.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
+    <a href="service.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-info">Detay</a>
+    <a href="service_payment.php?service_id=<?= $s['id'] ?>" class="btn btn-sm btn-primary">Tahsilat</a>
+    <a href="service_edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
+    <a href="service_delete.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
    </td>
   </tr>
  <?php endforeach; ?>

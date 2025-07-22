@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $prodStmt->execute([$p['name'],$p['unit'],$p['vat_rate'],$p['price'],$p['currency']]);
         }
     }
-    header('Location: /services.php');
+    header('Location: services.php');
     exit;
 }
 

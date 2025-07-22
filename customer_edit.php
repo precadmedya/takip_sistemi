@@ -6,7 +6,7 @@ $stmt = $pdo->prepare('SELECT * FROM customers WHERE id=?');
 $stmt->execute([$id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$customer){
-    header('Location: /customers.php');
+    header('Location: customers.php');
     exit;
 }
 
@@ -20,7 +20,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $_POST['address'],
         $id
     ]);
-    header('Location: /customers.php');
+    header('Location: customers.php');
     exit;
 }
 
@@ -49,6 +49,6 @@ include __DIR__.'/includes/header.php';
     <textarea name="address" class="form-control"><?= htmlspecialchars($customer['address']) ?></textarea>
   </div>
   <button type="submit" class="btn btn-primary">Kaydet</button>
-  <a href="/customers.php" class="btn btn-secondary">İptal</a>
+  <a href="customers.php" class="btn btn-secondary">İptal</a>
 </form>
 <?php include __DIR__.'/includes/footer.php'; ?>

@@ -6,6 +6,6 @@ $stmt->execute([$id]);
 $service_id = $stmt->fetchColumn();
 $del = $pdo->prepare('DELETE FROM payments WHERE id=?');
 $del->execute([$id]);
-$redirect = $service_id ? '/service.php?id='.$service_id : '/customers.php';
+$redirect = $service_id ? 'service.php?id='.$service_id : 'customers.php';
 header('Location: '.$redirect);
 exit;

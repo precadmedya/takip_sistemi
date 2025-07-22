@@ -7,7 +7,7 @@ $id = $_GET['id'] ?? null;
 if ($action === 'delete' && $id) {
     $stmt = $pdo->prepare('DELETE FROM providers WHERE id=?');
     $stmt->execute([$id]);
-    header('Location: /providers.php');
+    header('Location: providers.php');
     exit;
 }
 
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('INSERT INTO providers (name) VALUES (?)');
         $stmt->execute([$name]);
     }
-    header('Location: /providers.php');
+    header('Location: providers.php');
     exit;
 }
 
@@ -50,8 +50,8 @@ include __DIR__ . '/includes/header.php';
       <td><?= $p['id'] ?></td>
       <td><?= htmlspecialchars($p['name']) ?></td>
       <td>
-        <a href="/providers.php?action=edit&id=<?= $p['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
-        <a href="/providers.php?action=delete&id=<?= $p['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?')">Sil</a>
+        <a href="providers.php?action=edit&id=<?= $p['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
+        <a href="providers.php?action=delete&id=<?= $p['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?')">Sil</a>
       </td>
     </tr>
   <?php endforeach; ?>

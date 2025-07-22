@@ -8,7 +8,7 @@ $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $usdRate = getUsdRate($pdo);
 ?>
 <h1>Hizmetler</h1>
-<a href="/service_add.php" class="btn btn-primary mb-3">Hizmet Ekle</a>
+<a href="service_add.php" class="btn btn-primary mb-3">Hizmet Ekle</a>
 <table class="table table-bordered">
   <thead>
     <tr>
@@ -47,10 +47,10 @@ $usdRate = getUsdRate($pdo);
       <td><?= htmlspecialchars($s['notes']) ?></td>
       <td><?= date('d.m.Y', strtotime($s['created_at'])) ?></td>
       <td>
-        <a href="/service.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-info">Detay</a>
-        <a href="/service_payment.php?service_id=<?= $s['id'] ?>" class="btn btn-sm btn-primary">Tahsilat</a>
-        <a href="/service_edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
-        <a href="/service_delete.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
+        <a href="service.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-info">Detay</a>
+        <a href="service_payment.php?service_id=<?= $s['id'] ?>" class="btn btn-sm btn-primary">Tahsilat</a>
+        <a href="service_edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
+        <a href="service_delete.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
       </td>
     </tr>
   <?php endforeach; ?>

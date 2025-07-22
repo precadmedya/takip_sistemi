@@ -7,7 +7,7 @@ $id = $_GET['id'] ?? null;
 if ($action === 'delete' && $id) {
     $stmt = $pdo->prepare('DELETE FROM users WHERE id=?');
     $stmt->execute([$id]);
-    header('Location: /users.php');
+    header('Location: users.php');
     exit;
 }
 
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('INSERT INTO users (email, password, role) VALUES (?, ?, ?)');
         $stmt->execute([$email, $pass, $role]);
     }
-    header('Location: /users.php');
+    header('Location: users.php');
     exit;
 }
 
@@ -60,8 +60,8 @@ include __DIR__ . '/includes/header.php';
       <td><?= htmlspecialchars($u['email']) ?></td>
       <td><?= $u['role'] ?></td>
       <td>
-        <a href="/users.php?action=edit&id=<?= $u['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
-        <a href="/users.php?action=delete&id=<?= $u['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?')">Sil</a>
+        <a href="users.php?action=edit&id=<?= $u['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
+        <a href="users.php?action=delete&id=<?= $u['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?')">Sil</a>
       </td>
     </tr>
     <?php endforeach; ?>

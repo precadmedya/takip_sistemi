@@ -7,7 +7,7 @@ $stmt = $pdo->prepare('SELECT s.*, c.full_name FROM services s JOIN customers c 
 $stmt->execute([$service_id]);
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$service){
-    header('Location: /services.php');
+    header('Location: services.php');
     exit;
 }
 $customer_id = $service['customer_id'];
@@ -48,7 +48,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $stmt->execute([$customer_id,$service['product_id'],$service['provider_id'],$service['site_name'],$service['service_type'],$start,$due,$duration,$renew_price*$years,$renew_currency,$renew_vat_rate,$price_try,$service['status'],$service['notes']]);
     }
 
-    header('Location: /customer.php?id='.$customer_id);
+    header('Location: customer.php?id='.$customer_id);
     exit;
 }
 
@@ -120,7 +120,7 @@ include __DIR__.'/includes/header.php';
     </div>
   </div>
   <button type="submit" class="btn btn-primary">Kaydet</button>
-  <a href="/customer.php?id=<?= $customer_id ?>" class="btn btn-secondary">İptal</a>
+  <a href="customer.php?id=<?= $customer_id ?>" class="btn btn-secondary">İptal</a>
 </form>
 <script>
  document.getElementById('renew').addEventListener('change',function(){

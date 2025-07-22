@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['company'],
         $_POST['address']
     ]);
-    header('Location: /customers.php');
+    header('Location: customers.php');
     exit;
 }
 

@@ -6,7 +6,7 @@ $stmt = $pdo->prepare('SELECT s.*, c.full_name, p.name AS product_name, pr.name 
 $stmt->execute([$id]);
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$service){
-    header('Location: /services.php');
+    header('Location: services.php');
     exit;
 }
 $usdRate = getUsdRate($pdo);
@@ -78,14 +78,14 @@ $payments = $payStmt->fetchAll(PDO::FETCH_ASSOC);
    <td><?= htmlspecialchars($p['currency']) ?></td>
    <td><?= date('d.m.Y', strtotime($p['created_at'])) ?></td>
    <td>
-    <a href="/payment_edit.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
-    <a href="/payment_delete.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
+    <a href="payment_edit.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
+    <a href="payment_delete.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
    </td>
   </tr>
   <?php endforeach; ?>
  </tbody>
 </table>
-<a href="/service_payment.php?service_id=<?= $service['id'] ?>" class="btn btn-primary">Tahsilat Yap</a>
-<a href="/service_edit.php?id=<?= $service['id'] ?>" class="btn btn-warning">Düzenle</a>
-<a href="/service_delete.php?id=<?= $service['id'] ?>" class="btn btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
+<a href="service_payment.php?service_id=<?= $service['id'] ?>" class="btn btn-primary">Tahsilat Yap</a>
+<a href="service_edit.php?id=<?= $service['id'] ?>" class="btn btn-warning">Düzenle</a>
+<a href="service_delete.php?id=<?= $service['id'] ?>" class="btn btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
 <?php include __DIR__.'/includes/footer.php'; ?>

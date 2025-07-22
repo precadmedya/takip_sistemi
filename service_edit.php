@@ -7,7 +7,7 @@ $stmt = $pdo->prepare('SELECT * FROM services WHERE id=?');
 $stmt->execute([$id]);
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$service){
-    header('Location: /services.php');
+    header('Location: services.php');
     exit;
 }
 
@@ -41,7 +41,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $_POST['notes'],
         $id
     ]);
-    header('Location: /service.php?id='.$id);
+    header('Location: service.php?id='.$id);
     exit;
 }
 
@@ -118,7 +118,7 @@ include __DIR__.'/includes/header.php';
     <textarea name="notes" class="form-control"><?= htmlspecialchars($service['notes']) ?></textarea>
   </div>
   <button type="submit" class="btn btn-primary">Kaydet</button>
-  <a href="/services.php" class="btn btn-secondary">İptal</a>
+  <a href="services.php" class="btn btn-secondary">İptal</a>
 </form>
 <script>
 function updateFromProduct(){

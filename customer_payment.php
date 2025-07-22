@@ -6,7 +6,7 @@ $stmt = $pdo->prepare('SELECT * FROM customers WHERE id=?');
 $stmt->execute([$customer_id]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$customer){
-    header('Location: /customers.php');
+    header('Location: customers.php');
     exit;
 }
 
@@ -26,7 +26,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $amount_try = $currency === 'USD' ? $amount * $usdRate : $amount;
     $stmt = $pdo->prepare('INSERT INTO payments (customer_id, service_id, amount_try, amount_orig, currency) VALUES (?,?,?,?,?)');
     $stmt->execute([$customer_id, $serviceId, $amount_try, $amount, $currency]);
-    header('Location: /customers.php');
+    header('Location: customers.php');
     exit;
 }
 
@@ -56,6 +56,6 @@ include __DIR__.'/includes/header.php';
     </select>
   </div>
   <button type="submit" class="btn btn-primary">Kaydet</button>
-  <a href="/customers.php" class="btn btn-secondary">İptal</a>
+  <a href="customers.php" class="btn btn-secondary">İptal</a>
 </form>
 <?php include __DIR__.'/includes/footer.php'; ?>
