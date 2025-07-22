@@ -36,7 +36,8 @@ Bu proje, domain ve hosting hizmetlerini takip etmek için basit bir PHP panelid
 - `/payment_delete.php` – Tahsilat silme
 - `/products.php` – Ürün yönetimi
  - `/providers.php` – Sağlayıcı yönetimi (borç tutarlarını gösterir, detay sayfasından satın alımlar listelenebilir)
- - `/provider.php?id=X` – Tedarikçi detay sayfası ve yeni satın alım girişi
+- `/provider.php?id=X` – Tedarikçi detay sayfası ve yeni satın alım girişi
+- `/purchase_add.php` – Sağlayıcı seçerek ürün satın alma formu
 - `/users.php` – Kullanıcı yönetimi
  - `/settings.php` – Logo ve SMTP ayarları
 - `/update_rates.php` – TCMB kurunu çekip hizmet toplamlarını güncelleme (header'daki "Kur Güncelle" butonuyla erişilir)

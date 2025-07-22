@@ -30,6 +30,7 @@ $currentRate = getUsdRate($pdo);
     <li class="nav-item"><a class="nav-link" href="services.php">Hizmetler</a></li>
     <li class="nav-item"><a class="nav-link" href="products.php">Ürünler</a></li>
     <li class="nav-item"><a class="nav-link" href="providers.php">Sağlayıcılar</a></li>
+    <li class="nav-item"><a class="nav-link" href="purchase_add.php">Ürün Satın Al</a></li>
     <li class="nav-item dropdown">
       <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Ayarlar</a>
       <ul class="dropdown-menu">
