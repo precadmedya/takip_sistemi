@@ -16,10 +16,11 @@ Bu proje, domain ve hosting hizmetlerini takip etmek için basit bir PHP panelid
 ## Sayfalar
 
 - `/login.php` – Oturum açma ekranı
-- `/dashboard.php` – Anasayfa, takvim ve özet kartlar
+- `/dashboard.php` – Anasayfa, renkli takvim ve analiz kartları
 - `/customers.php` – Müşteri listesi
  - `/customer_payment.php` – Müşteri tahsilatı (isteğe bağlı hizmet seçilebilir)
-- `/customer.php` – Müşteri detayları ve hizmet listesi
+- `/customer.php` – Müşterinin detaylı sayfası, geçmiş ödemeler ve yaklaşan borçlar
+- `/customer_statement.php` – Müşteri ekstresi (CSV indirme)
  - `/customer_add.php` – Müşteri ekleme formu
  - `/customer_edit.php` – Müşteri düzenleme
  - `/customer_delete.php` – Müşteri silme
@@ -45,3 +46,5 @@ Logo yükleme sayfasında giriş ve üst menüde kullanılacak logonun boyutlar�
 
 Veritabanında `payments` tablosu tahsilat kayıtlarını tutar ve `exchange_rates` tablosundaki güncel dolar kuru kullanılarak USD tahsilatları otomatik TL'ye çevrilir.
 Hizmet kayıtlarında hem orijinal para birimi hem de TL karşılığı saklanır ve ödeme tarihi alanı bulunur.
+
+Dashboard sayfasında FullCalendar tabanlı renkli bir takvim yer alır. Hizmetlerin bitiş tarihleri kalan güne göre yeşil, sarı, turuncu veya kırmızı olarak gösterilir. Etkinliklere tıklandığında detayları içeren bir modal açılır. Takvimin altında en çok satan hizmetler ve son eklenen hizmetler listelenir.
