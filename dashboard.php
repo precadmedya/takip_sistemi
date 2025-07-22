@@ -30,6 +30,7 @@ $customerCount = (int)$pdo->query("SELECT COUNT(*) FROM customers")->fetchColumn
 $serviceCount = (int)$pdo->query("SELECT COUNT(*) FROM services")->fetchColumn();
 $topServices = $pdo->query("SELECT service_type, COUNT(*) c FROM services GROUP BY service_type ORDER BY c DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
 $recent = $pdo->query("SELECT s.id,c.full_name,s.site_name FROM services s JOIN customers c ON s.customer_id=c.id ORDER BY s.created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+$rateRow = $pdo->query("SELECT rate_date, usd_try FROM exchange_rates ORDER BY rate_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 include __DIR__.'/includes/header.php';
 ?>
 <h1>Anasayfa</h1>
@@ -46,6 +47,11 @@ include __DIR__.'/includes/header.php';
   <div class="col-md-3">
     <div class="card text-bg-light mb-3"><div class="card-body"><h5 class="card-title">Hizmet Sayısı</h5><p class="card-text fw-bold"><?= $serviceCount ?></p></div></div>
   </div>
+  <?php if ($rateRow): ?>
+  <div class="col-md-3">
+    <div class="card text-bg-light mb-3"><div class="card-body"><h5 class="card-title">Güncel Kur</h5><p class="card-text fw-bold"><?= number_format($rateRow['usd_try'],4,',','.') ?> (<?= htmlspecialchars($rateRow['rate_date']) ?>)</p></div></div>
+  </div>
+  <?php endif; ?>
 </div>
 <h2>Takvim</h2>
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">

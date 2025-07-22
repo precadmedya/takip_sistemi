@@ -29,6 +29,7 @@ foreach (['logo','logo_header_width','logo_header_height'] as $k) {
     <li class="nav-item"><a class="nav-link" href="/products.php">Ürünler</a></li>
     <li class="nav-item"><a class="nav-link" href="/providers.php">Sağlayıcılar</a></li>
     <li class="nav-item"><a class="nav-link" href="/users.php">Kullanıcılar</a></li>
+    <li class="nav-item"><a class="nav-link" href="/exchange_rates.php">Kur Bilgisi</a></li>
     <li class="nav-item"><a class="nav-link" href="/settings.php">Ayarlar</a></li>
    </ul>
    <a href="/logout.php" class="btn btn-outline-secondary">Çıkış</a>

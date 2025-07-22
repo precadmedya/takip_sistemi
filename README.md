@@ -38,6 +38,14 @@ Bu proje, domain ve hosting hizmetlerini takip etmek için basit bir PHP panelid
 - `/users.php` – Kullanıcı yönetimi
 - `/settings.php` – Logo ve boyut ayarları
 - `/exchange_rates_cron.php` – Günlük kur çekme işlemi
+- `/exchange_rates.php` – Kur geçmişi listesi
+
+`exchange_rates_cron.php` dosyası her gün çalıştırılarak TCMB'den USD kurunun
+güncel değerini `exchange_rates` tablosuna kaydeder. Cron örneği:
+
+```
+0 9 * * * php /path/to/exchange_rates_cron.php >/dev/null 2>&1
+```
 
 Müşteri listesi sayfasında her müşterinin TL cinsinden bakiyesi görüntülenir. USD olarak kaydedilmiş hizmet bedelleri, sistemdeki en güncel kura göre TL'ye dönüştürülerek hesaplanır. Tahsilatlar hem müşteri hem de hizmet bazında kaydedilir ve bakiye bu ödemeler düşülerek hesaplanır.
 
