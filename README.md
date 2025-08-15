@@ -35,7 +35,7 @@ Bu proje, domain ve hosting hizmetlerini takip etmek için basit bir PHP panelid
 - `/customer_delete.php` – Müşteri silme
 - `/customers.php?export=1` – Müşterileri CSV olarak dışa aktarır; aynı sayfada
   yer alan "CSV İçe Aktar" formu ile düzenlenmiş liste yeniden yüklenebilir
- - `/services.php` – Hizmet listesi
+ - `/services.php` – Hizmet listesi (CSV dışa/içe aktarım destekler ve liste varsayılan olarak en yakın ödeme tarihine göre sıralanır)
  - `/service_payment.php` – Hizmet tahsilatı ve yenileme
    (mevcut borcu görüntüler ve ödeme sonrası uzatma seçeneği sunar)
  - `/service_add.php` – Hizmet ekleme formu. Ürün satırında seçim yapıldığında fiyat, döviz ve KDV otomatik dolar.
@@ -94,6 +94,8 @@ Müşteri tablosu varsayılan olarak şirket adına göre alfabetik sıralanır.
 Aynı sayfadan mevcut müşteri listesini CSV olarak dışa aktarabilir veya düzenlenmiş bir CSV dosyası yükleyerek kayıtları toplu güncelleyebilirsiniz.
 
 Ürünler sayfası da benzer şekilde çalışır. Liste varsayılan olarak ürün adına göre alfabetik sıralanır. İstenirse kayıtlar `products.csv` olarak dışa aktarılabilir ve düzenlenen dosya tekrar yüklenerek ürünler toplu güncellenebilir.
+
+Hizmetler sayfasında da liste `services.csv` olarak dışa aktarılabilir ve düzenlenen CSV tekrar yüklenerek yeni hizmetler eklenebilir ya da mevcut kayıtlar güncellenebilir. Hizmet listesi varsayılan olarak en yakın ödeme tarihine göre sıralanır.
 
 Tüm arayüz Türkçe olup Bootstrap 5 ile mobil uyumlu tasarlanmıştır. Sayfalara erişmek için oturum açmak gereklidir.
 Logo yükleme sayfasında giriş ve üst menüde kullanılacak logonun boyutları ayarlanabilir. Aynı ekranda alt bilgi metni ve footer logosu da düzenlenebilir.
