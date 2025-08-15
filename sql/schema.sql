@@ -5,7 +5,9 @@ CREATE TABLE customers (
   phone VARCHAR(50),
   company VARCHAR(255),
   address TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  user_id INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE products (
@@ -15,14 +17,18 @@ CREATE TABLE products (
   vat_rate DECIMAL(5,2),
   price DECIMAL(10,2),
   currency VARCHAR(10),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  user_id INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE providers (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255),
   website VARCHAR(255),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  user_id INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE services (
@@ -44,10 +50,12 @@ CREATE TABLE services (
   notes TEXT,
   reminder_enabled TINYINT(1) DEFAULT 0,
   reminder_days VARCHAR(50),
+  user_id INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id),
-  FOREIGN KEY (provider_id) REFERENCES providers(id)
+  FOREIGN KEY (provider_id) REFERENCES providers(id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE service_items (
@@ -61,9 +69,11 @@ CREATE TABLE service_items (
   currency VARCHAR(10),
   provider_id INT,
   description TEXT,
+  user_id INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
-  FOREIGN KEY (provider_id) REFERENCES providers(id)
+  FOREIGN KEY (provider_id) REFERENCES providers(id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE exchange_rates (
@@ -80,22 +90,27 @@ CREATE TABLE payments (
   amount_try DECIMAL(10,2),
   amount_orig DECIMAL(10,2),
   currency VARCHAR(10),
+  user_id INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
-  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(100) UNIQUE,
   password VARCHAR(255),
-  role ENUM('admin','user') DEFAULT 'admin',
+  role ENUM('admin','firma') DEFAULT 'firma',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE settings (
-  `key` VARCHAR(50) PRIMARY KEY,
-  value TEXT
+  `key` VARCHAR(50),
+  user_id INT DEFAULT NULL,
+  value TEXT,
+  PRIMARY KEY (`key`, user_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE provider_purchases (
@@ -111,8 +126,10 @@ CREATE TABLE provider_purchases (
   payment_date DATE,
   price_try DECIMAL(10,2),
   notes TEXT,
+  user_id INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE CASCADE
+  FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE email_logs (
@@ -135,28 +152,31 @@ CREATE TABLE provider_payments (
   currency VARCHAR(10),
   pay_date DATE,
   notes TEXT,
+  user_id INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE CASCADE
+  FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO users (email, password, role) VALUES
-('info@precadmedya.com.tr', '$2y$12$g0QsFECHVjIwr2WhxPLLV.i/wskHA2S0VuZY0bowUph3KdXmaZ3MS', 'admin');
+('info@precadmedya.com.tr', '$2y$12$g0QsFECHVjIwr2WhxPLLV.i/wskHA2S0VuZY0bowUph3KdXmaZ3MS', 'admin'),
+('firma@example.com', '$2y$12$0mKHcB3Ojp2tGv2OnraYTekBClyuyx9ObpzUGqSnLeFLKbhECbp2.', 'firma');
 
-INSERT INTO settings (`key`, value) VALUES
-('logo', ''),
-('logo_login_width','140'),
-('logo_login_height','40'),
-('logo_header_width','120'),
-('logo_header_height','40'),
-('mail_logo',''),
-('smtp_host','smtp.yandex.com.tr'),
-('smtp_port','465'),
-('smtp_encryption','ssl'),
-('smtp_user','info@precadmedya.com.tr'),
-('smtp_pass','Precadmedya34523'),
-('smtp_from_name','Precad Medya'),
-('smtp_from_email','info@precadmedya.com.tr'),
-('footer_text','Precad Medya 2025 Tüm Hakları Saklıdır.'),
-('footer_logo',''),
-('footer_logo_width','120'),
-('footer_logo_height','40');
+INSERT INTO settings (`key`, user_id, value) VALUES
+('logo', NULL, ''),
+('logo_login_width', NULL, '140'),
+('logo_login_height', NULL, '40'),
+('logo_header_width', NULL, '120'),
+('logo_header_height', NULL, '40'),
+('mail_logo', NULL, ''),
+('smtp_host', NULL, 'smtp.yandex.com.tr'),
+('smtp_port', NULL, '465'),
+('smtp_encryption', NULL, 'ssl'),
+('smtp_user', NULL, 'info@precadmedya.com.tr'),
+('smtp_pass', NULL, 'Precadmedya34523'),
+('smtp_from_name', NULL, 'Precad Medya'),
+('smtp_from_email', NULL, 'info@precadmedya.com.tr'),
+('footer_text', NULL, 'Precad Medya 2025 Tüm Hakları Saklıdır.'),
+('footer_logo', NULL, ''),
+('footer_logo_width', NULL, '120'),
+('footer_logo_height', NULL, '40');

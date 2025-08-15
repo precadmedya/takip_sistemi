@@ -8,7 +8,12 @@ if (isset($_GET['export'])) {
     header('Content-Disposition: attachment; filename=products.csv');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['id','name','unit','vat_rate','price','currency']);
-    $stmt = $pdo->query('SELECT id,name,unit,vat_rate,price,currency FROM products ORDER BY id');
+    if($_SESSION['role']==='admin') {
+        $stmt = $pdo->query('SELECT id,name,unit,vat_rate,price,currency FROM products ORDER BY id');
+    } else {
+        $stmt = $pdo->prepare('SELECT id,name,unit,vat_rate,price,currency FROM products WHERE user_id=? ORDER BY id');
+        $stmt->execute([$_SESSION['user_id']]);
+    }
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         fputcsv($out, $row);
     }
@@ -28,25 +33,25 @@ if (isset($_POST['import']) && isset($_FILES['import_file']) && is_uploaded_file
             $name = trim($row['name'] ?? '');
             $id = $row['id'] ?? null;
             if ($id) {
-                $stmt = $pdo->prepare('SELECT id FROM products WHERE id=?');
-                $stmt->execute([$id]);
+                $stmt = $pdo->prepare('SELECT id FROM products WHERE id=? AND user_id=?');
+                $stmt->execute([$id, $_SESSION['user_id']]);
                 if ($stmt->fetchColumn()) {
-                    $u = $pdo->prepare('UPDATE products SET name=?, unit=?, vat_rate=?, price=?, currency=? WHERE id=?');
-                    $u->execute([$row['name'],$row['unit'],$row['vat_rate'],$row['price'],$row['currency'],$id]);
+                    $u = $pdo->prepare('UPDATE products SET name=?, unit=?, vat_rate=?, price=?, currency=? WHERE id=? AND user_id=?');
+                    $u->execute([$row['name'],$row['unit'],$row['vat_rate'],$row['price'],$row['currency'],$id,$_SESSION['user_id']]);
                     $count++; continue;
                 }
             }
             if ($name) {
-                $stmt = $pdo->prepare('SELECT id FROM products WHERE name=?');
-                $stmt->execute([$name]);
+                $stmt = $pdo->prepare('SELECT id FROM products WHERE name=? AND user_id=?');
+                $stmt->execute([$name, $_SESSION['user_id']]);
                 if ($pid = $stmt->fetchColumn()) {
-                    $u = $pdo->prepare('UPDATE products SET unit=?, vat_rate=?, price=?, currency=? WHERE id=?');
-                    $u->execute([$row['unit'],$row['vat_rate'],$row['price'],$row['currency'],$pid]);
+                    $u = $pdo->prepare('UPDATE products SET unit=?, vat_rate=?, price=?, currency=? WHERE id=? AND user_id=?');
+                    $u->execute([$row['unit'],$row['vat_rate'],$row['price'],$row['currency'],$pid,$_SESSION['user_id']]);
                     $count++; continue;
                 }
             }
-            $i = $pdo->prepare('INSERT INTO products(name,unit,vat_rate,price,currency) VALUES (?,?,?,?,?)');
-            $i->execute([$row['name'],$row['unit'],$row['vat_rate'],$row['price'],$row['currency']]);
+            $i = $pdo->prepare('INSERT INTO products(name,unit,vat_rate,price,currency,user_id) VALUES (?,?,?,?,?,?)');
+            $i->execute([$row['name'],$row['unit'],$row['vat_rate'],$row['price'],$row['currency'],$_SESSION['user_id']]);
             $count++;
         }
     }
@@ -60,8 +65,14 @@ $action = $_GET['action'] ?? '';
 $id = $_GET['id'] ?? null;
 
 if ($action === 'delete' && $id) {
-    $stmt = $pdo->prepare('DELETE FROM products WHERE id=?');
-    $stmt->execute([$id]);
+    $sql = 'DELETE FROM products WHERE id=?';
+    $params = [$id];
+    if($_SESSION['role'] !== 'admin') {
+        $sql .= ' AND user_id=?';
+        $params[] = $_SESSION['user_id'];
+    }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     header('Location: products.php');
     exit;
 }
@@ -73,11 +84,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = $_POST['price'];
     $currency = $_POST['currency'];
     if ($action === 'edit' && $id) {
-        $stmt = $pdo->prepare('UPDATE products SET name=?, unit=?, vat_rate=?, price=?, currency=? WHERE id=?');
-        $stmt->execute([$name, $unit, $vat_rate, $price, $currency, $id]);
+        $sql = 'UPDATE products SET name=?, unit=?, vat_rate=?, price=?, currency=? WHERE id=?';
+        $params = [$name, $unit, $vat_rate, $price, $currency, $id];
+        if($_SESSION['role'] !== 'admin') {
+            $sql .= ' AND user_id=?';
+            $params[] = $_SESSION['user_id'];
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
     } else {
-        $stmt = $pdo->prepare('INSERT INTO products (name, unit, vat_rate, price, currency) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute([$name, $unit, $vat_rate, $price, $currency]);
+        $stmt = $pdo->prepare('INSERT INTO products (name, unit, vat_rate, price, currency, user_id) VALUES (?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$name, $unit, $vat_rate, $price, $currency, $_SESSION['user_id']]);
     }
     header('Location: products.php');
     exit;
@@ -85,12 +102,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $edit = null;
 if ($action === 'edit' && $id) {
-    $stmt = $pdo->prepare('SELECT * FROM products WHERE id=?');
-    $stmt->execute([$id]);
+    $sql = 'SELECT * FROM products WHERE id=?';
+    $params = [$id];
+    if($_SESSION['role'] !== 'admin') {
+        $sql .= ' AND user_id=?';
+        $params[] = $_SESSION['user_id'];
+    }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $edit = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-$products = $pdo->query('SELECT * FROM products ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
+if($_SESSION['role'] === 'admin') {
+    $products = $pdo->query('SELECT * FROM products ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
+} else {
+    $stmt = $pdo->prepare('SELECT * FROM products WHERE user_id=? ORDER BY name ASC');
+    $stmt->execute([$_SESSION['user_id']]);
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 include __DIR__ . '/includes/header.php';
 ?>

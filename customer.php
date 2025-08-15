@@ -3,8 +3,14 @@ require __DIR__.'/includes/auth.php';
 require __DIR__.'/includes/functions.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt = $pdo->prepare('SELECT * FROM customers WHERE id=?');
-$stmt->execute([$id]);
+$params = [$id];
+$sql = 'SELECT * FROM customers WHERE id=?';
+if($_SESSION['role'] !== 'admin') {
+    $sql .= ' AND user_id=?';
+    $params[] = $_SESSION['user_id'];
+}
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$customer){
     header('Location: customers.php');

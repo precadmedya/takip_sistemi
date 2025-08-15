@@ -2,8 +2,8 @@
 require __DIR__.'/includes/auth.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt = $pdo->prepare('SELECT * FROM customers WHERE id=?');
-$stmt->execute([$id]);
+$stmt = $pdo->prepare('SELECT * FROM customers WHERE id=? AND user_id=?');
+$stmt->execute([$id, $_SESSION['user_id']]);
 $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$customer){
     header('Location: customers.php');
@@ -11,14 +11,15 @@ if(!$customer){
 }
 
 if($_SERVER['REQUEST_METHOD']==='POST'){
-    $stmt = $pdo->prepare('UPDATE customers SET full_name=?, email=?, phone=?, company=?, address=? WHERE id=?');
+    $stmt = $pdo->prepare('UPDATE customers SET full_name=?, email=?, phone=?, company=?, address=? WHERE id=? AND user_id=?');
     $stmt->execute([
         $_POST['full_name'],
         $_POST['email'],
         $_POST['phone'],
         $_POST['company'],
         $_POST['address'],
-        $id
+        $id,
+        $_SESSION['user_id']
     ]);
     header('Location: customers.php');
     exit;

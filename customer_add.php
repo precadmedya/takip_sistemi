@@ -2,13 +2,14 @@
 require __DIR__.'/includes/auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $stmt = $pdo->prepare("INSERT INTO customers (full_name, email, phone, company, address, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
+    $stmt = $pdo->prepare("INSERT INTO customers (full_name, email, phone, company, address, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
     $stmt->execute([
         $_POST['full_name'],
         $_POST['email'],
         $_POST['phone'],
         $_POST['company'],
-        $_POST['address']
+        $_POST['address'],
+        $_SESSION['user_id']
     ]);
     header('Location: customers.php');
     exit;

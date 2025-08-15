@@ -8,7 +8,12 @@ if (isset($_GET['export'])) {
     header('Content-Disposition: attachment; filename=customers.csv');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['id','full_name','email','phone','company','address']);
-    $stmt = $pdo->query('SELECT id, full_name, email, phone, company, address FROM customers ORDER BY id');
+    if($_SESSION['role'] === 'admin') {
+        $stmt = $pdo->query('SELECT id, full_name, email, phone, company, address FROM customers ORDER BY id');
+    } else {
+        $stmt = $pdo->prepare('SELECT id, full_name, email, phone, company, address FROM customers WHERE user_id=? ORDER BY id');
+        $stmt->execute([$_SESSION['user_id']]);
+    }
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         fputcsv($out, $row);
     }
@@ -28,25 +33,25 @@ if (isset($_POST['import']) && isset($_FILES['import_file']) && is_uploaded_file
             $email = trim($row['email'] ?? '');
             $id = $row['id'] ?? null;
             if ($id) {
-                $stmt = $pdo->prepare('SELECT id FROM customers WHERE id=?');
-                $stmt->execute([$id]);
+                $stmt = $pdo->prepare('SELECT id FROM customers WHERE id=? AND user_id=?');
+                $stmt->execute([$id, $_SESSION['user_id']]);
                 if ($stmt->fetchColumn()) {
-                    $u = $pdo->prepare('UPDATE customers SET full_name=?, email=?, phone=?, company=?, address=? WHERE id=?');
-                    $u->execute([$row['full_name'],$email,$row['phone'],$row['company'],$row['address'],$id]);
+                    $u = $pdo->prepare('UPDATE customers SET full_name=?, email=?, phone=?, company=?, address=? WHERE id=? AND user_id=?');
+                    $u->execute([$row['full_name'],$email,$row['phone'],$row['company'],$row['address'],$id,$_SESSION['user_id']]);
                     $count++; continue;
                 }
             }
             if ($email) {
-                $stmt = $pdo->prepare('SELECT id FROM customers WHERE email=?');
-                $stmt->execute([$email]);
+                $stmt = $pdo->prepare('SELECT id FROM customers WHERE email=? AND user_id=?');
+                $stmt->execute([$email, $_SESSION['user_id']]);
                 if ($cid = $stmt->fetchColumn()) {
-                    $u = $pdo->prepare('UPDATE customers SET full_name=?, phone=?, company=?, address=? WHERE id=?');
-                    $u->execute([$row['full_name'],$row['phone'],$row['company'],$row['address'],$cid]);
+                    $u = $pdo->prepare('UPDATE customers SET full_name=?, phone=?, company=?, address=? WHERE id=? AND user_id=?');
+                    $u->execute([$row['full_name'],$row['phone'],$row['company'],$row['address'],$cid,$_SESSION['user_id']]);
                     $count++; continue;
                 }
             }
-            $i = $pdo->prepare('INSERT INTO customers(full_name,email,phone,company,address) VALUES (?,?,?,?,?)');
-            $i->execute([$row['full_name'],$email,$row['phone'],$row['company'],$row['address']]);
+            $i = $pdo->prepare('INSERT INTO customers(full_name,email,phone,company,address,user_id) VALUES (?,?,?,?,?,?)');
+            $i->execute([$row['full_name'],$email,$row['phone'],$row['company'],$row['address'],$_SESSION['user_id']]);
             $count++;
         }
     }
@@ -64,15 +69,17 @@ if (!in_array($sort, $validSort)) {
     $sort = 'company';
 }
 $dir = strtolower($_GET['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
-
-$stmt = $pdo->prepare("SELECT c.*,
-    IFNULL(SUM(s.price_try * (1 + s.vat_rate/100)),0) -
-    IFNULL((SELECT SUM(amount_try) FROM payments p WHERE p.customer_id=c.id),0) AS balance
-    FROM customers c
-    LEFT JOIN services s ON s.customer_id = c.id
-    GROUP BY c.id
-    ORDER BY $sort $dir");
-$stmt->execute();
+$query = "SELECT c.*, IFNULL(SUM(s.price_try * (1 + s.vat_rate/100)),0) - IFNULL((SELECT SUM(amount_try) FROM payments p WHERE p.customer_id=c.id),0) AS balance FROM customers c LEFT JOIN services s ON s.customer_id = c.id";
+if($_SESSION['role'] !== 'admin') {
+    $query .= " WHERE c.user_id=:uid";
+}
+$query .= " GROUP BY c.id ORDER BY $sort $dir";
+$stmt = $pdo->prepare($query);
+if($_SESSION['role'] !== 'admin') {
+    $stmt->execute(['uid'=>$_SESSION['user_id']]);
+} else {
+    $stmt->execute();
+}
 $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <h1>Müşteriler</h1>

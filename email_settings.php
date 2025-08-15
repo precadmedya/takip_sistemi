@@ -5,25 +5,26 @@ require_once __DIR__.'/includes/functions.php';
 $keys = ['mail_logo','smtp_host','smtp_port','smtp_encryption','smtp_user','smtp_pass','smtp_from_name','smtp_from_email'];
 $settings=[];
 foreach($keys as $k){
-    $stmt=$pdo->prepare('SELECT value FROM settings WHERE `key`=?');
-    $stmt->execute([$k]);
+    $stmt=$pdo->prepare('SELECT value FROM settings WHERE `key`=? AND (user_id IS NULL OR user_id=?) ORDER BY user_id DESC LIMIT 1');
+    $stmt->execute([$k, $_SESSION['user_id']]);
     $settings[$k]=$stmt->fetchColumn() ?: '';
 }
 
 if($_SERVER['REQUEST_METHOD']==='POST'){
+    $uid = $_SESSION['role'] === 'admin' ? null : $_SESSION['user_id'];
     if(!empty($_FILES['mail_logo']['tmp_name'])){
         $dir='uploads';
         if(!is_dir($dir)) mkdir($dir,0777,true);
         $path=$dir.'/'.basename($_FILES['mail_logo']['name']);
         move_uploaded_file($_FILES['mail_logo']['tmp_name'],$path);
-        $stmt=$pdo->prepare("REPLACE INTO settings (`key`,value) VALUES ('mail_logo',?)");
-        $stmt->execute([$path]);
+        $stmt=$pdo->prepare("REPLACE INTO settings (`key`,user_id,value) VALUES ('mail_logo',?,?)");
+        $stmt->execute([$uid,$path]);
         $settings['mail_logo']=$path;
     }
     foreach(['smtp_host','smtp_port','smtp_encryption','smtp_user','smtp_pass','smtp_from_name','smtp_from_email'] as $k){
         if(isset($_POST[$k])){
-            $stmt=$pdo->prepare("REPLACE INTO settings (`key`,value) VALUES (?,?)");
-            $stmt->execute([$k,$_POST[$k]]);
+            $stmt=$pdo->prepare("REPLACE INTO settings (`key`,user_id,value) VALUES (?,?,?)");
+            $stmt->execute([$k,$uid,$_POST[$k]]);
             $settings[$k]=$_POST[$k];
         }
     }
