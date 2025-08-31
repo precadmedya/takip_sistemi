@@ -1,3 +1,13 @@
+<?php
+require_once __DIR__.'/functions.php';
+$settings = [];
+foreach (['logo','logo_header_width','logo_header_height','favicon'] as $k) {
+    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=?');
+    $stmt->execute([$k]);
+    $settings[$k] = $stmt->fetchColumn() ?: '';
+}
+$currentRate = getUsdRate($pdo);
+?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -5,18 +15,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Takip Sistemi</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<?php if ($settings['favicon']): ?>
+<link rel="icon" type="image/png" href="/<?= htmlspecialchars($settings['favicon']) ?>">
+<?php endif; ?>
 </head>
 <body>
-<?php
-require_once __DIR__.'/functions.php';
-$settings = [];
-foreach (['logo','logo_header_width','logo_header_height'] as $k) {
-    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=?');
-    $stmt->execute([$k]);
-    $settings[$k] = $stmt->fetchColumn() ?: '';
-}
-$currentRate = getUsdRate($pdo);
-?>
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
  <div class="container-fluid">
   <a class="navbar-brand me-3" href="dashboard.php">
