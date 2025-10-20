@@ -23,11 +23,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $settings = [];
-foreach (['logo','logo_login_width','logo_login_height'] as $k) {
-    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=?');
+foreach (['logo', 'logo_login_width', 'logo_login_height'] as $k) {
+    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key` = ?');
     $stmt->execute([$k]);
     $settings[$k] = $stmt->fetchColumn() ?: '';
 }
+
+$logoWidth = isset($settings['logo_login_width']) ? (int)$settings['logo_login_width'] : 0;
+$logoHeight = isset($settings['logo_login_height']) ? (int)$settings['logo_login_height'] : 0;
+$logoStyleParts = ['max-width:100%'];
+if ($logoWidth > 0) {
+    $logoStyleParts[] = 'width:' . $logoWidth . 'px';
+}
+if ($logoHeight > 0) {
+    $logoStyleParts[] = 'height:' . $logoHeight . 'px';
+} else {
+    $logoStyleParts[] = 'height:auto';
+}
+$logoStyleParts[] = 'object-fit:contain';
+$logoStyle = implode(';', $logoStyleParts);
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -40,13 +54,13 @@ foreach (['logo','logo_login_width','logo_login_height'] as $k) {
 <style>
 body {background: linear-gradient(135deg, #f0f4f8, #d9e2ec); font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;}
 .login-box {background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center;}
-.login-logo img {margin-bottom: 20px; width:<?= (int)$settings['logo_login_width'] ?>px; height:<?= (int)$settings['logo_login_height'] ?>px; object-fit:contain;}
+.login-logo img {margin-bottom: 20px;}
 </style>
 </head>
 <body>
 <div class="login-box">
   <div class="login-logo">
-    <?php if ($settings['logo']): ?><img src="<?= htmlspecialchars($settings['logo']) ?>" alt="Logo"><?php endif; ?>
+    <?php if ($settings['logo']): ?><img src="<?= htmlspecialchars($settings['logo']) ?>" alt="Logo" style="<?= htmlspecialchars($logoStyle, ENT_QUOTES) ?>"><?php endif; ?>
   </div>
   <?php if ($error): ?><div class="alert alert-danger"><?= $error ?></div><?php endif; ?>
   <form method="post">

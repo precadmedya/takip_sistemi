@@ -2,9 +2,9 @@
 require __DIR__ . '/includes/auth.php';
 
 $settings = [];
-$keys = ['logo','logo_login_width','logo_login_height','logo_header_width','logo_header_height','footer_text','footer_logo','footer_logo_width','footer_logo_height'];
+$keys = ['logo', 'logo_login_width', 'logo_login_height', 'logo_header_width', 'logo_header_height', 'footer_text', 'footer_logo', 'footer_logo_width', 'footer_logo_height'];
 foreach ($keys as $k) {
-    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=?');
+    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key` = ?');
     $stmt->execute([$k]);
     $settings[$k] = $stmt->fetchColumn() ?: '';
 }
@@ -13,28 +13,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $save_message = '';
     if (!empty($_FILES['logo']['tmp_name'])) {
         $dir = 'uploads';
-        if (!is_dir($dir)) mkdir($dir, 0777, true);
-        $path = $dir . '/' . basename($_FILES['logo']['name']);
-        move_uploaded_file($_FILES['logo']['tmp_name'], $path);
-        $stmt = $pdo->prepare("REPLACE INTO settings (`key`, value) VALUES ('logo', ?)");
-        $stmt->execute([$path]);
-        $settings['logo'] = $path;
-    }
-    if(!empty($_FILES['footer_logo']['tmp_name'])){
-        $dir = 'uploads';
-        if(!is_dir($dir)) mkdir($dir,0777,true);
-        $path = $dir.'/'.basename($_FILES['footer_logo']['name']);
-        move_uploaded_file($_FILES['footer_logo']['tmp_name'],$path);
-        $stmt = $pdo->prepare("REPLACE INTO settings (`key`,value) VALUES ('footer_logo',?)");
-        $stmt->execute([$path]);
-        $settings['footer_logo']=$path;
-    }
-    foreach (['logo_login_width','logo_login_height','logo_header_width','logo_header_height','footer_text','footer_logo','footer_logo_width','footer_logo_height'] as $k) {
-        if (isset($_POST[$k])) {
-            $stmt = $pdo->prepare("REPLACE INTO settings (`key`, value) VALUES (?, ?)");
-            $stmt->execute([$k, $_POST[$k]]);
-            $settings[$k] = $_POST[$k];
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
         }
+        $extension = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+        $unique = str_replace('.', '_', uniqid('logo_', true));
+        $filename = $unique . ($extension ? '.' . $extension : '');
+        $path = $dir . '/' . $filename;
+        if (move_uploaded_file($_FILES['logo']['tmp_name'], $path)) {
+            $stmt = $pdo->prepare("REPLACE INTO settings (`key`, value) VALUES ('logo', ?)");
+            $stmt->execute([$path]);
+            $settings['logo'] = $path;
+        }
+    }
+    if (!empty($_FILES['footer_logo']['tmp_name'])) {
+        $dir = 'uploads';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        $extension = strtolower(pathinfo($_FILES['footer_logo']['name'], PATHINFO_EXTENSION));
+        $unique = str_replace('.', '_', uniqid('footer_logo_', true));
+        $filename = $unique . ($extension ? '.' . $extension : '');
+        $path = $dir . '/' . $filename;
+        if (move_uploaded_file($_FILES['footer_logo']['tmp_name'], $path)) {
+            $stmt = $pdo->prepare("REPLACE INTO settings (`key`, value) VALUES ('footer_logo', ?)");
+            $stmt->execute([$path]);
+            $settings['footer_logo'] = $path;
+        }
+    }
+
+    $numericKeys = ['logo_login_width', 'logo_login_height', 'logo_header_width', 'logo_header_height', 'footer_logo_width', 'footer_logo_height'];
+    foreach ($numericKeys as $k) {
+        if (array_key_exists($k, $_POST)) {
+            $value = trim((string)$_POST[$k]);
+            $value = $value === '' ? '' : max(0, (int)$value);
+            $stmt = $pdo->prepare("REPLACE INTO settings (`key`, value) VALUES (?, ?)");
+            $stmt->execute([$k, $value]);
+            $settings[$k] = $value;
+        }
+    }
+
+    if (isset($_POST['footer_text'])) {
+        $value = trim((string)$_POST['footer_text']);
+        $stmt = $pdo->prepare("REPLACE INTO settings (`key`, value) VALUES ('footer_text', ?)");
+        $stmt->execute([$value]);
+        $settings['footer_text'] = $value;
     }
     $save_message = 'Ayarlar kaydedildi';
 }
