@@ -19,7 +19,7 @@ $currentRate = getUsdRate($pdo);
 ?>
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
  <div class="container-fluid">
-  <a class="navbar-brand me-3" href="dashboard.php">
+  <a class="navbar-brand me-3 ms-3" href="dashboard.php">
     <?php if ($settings['logo']): ?>
       <img src="<?= htmlspecialchars($settings['logo']) ?>" alt="Logo" style="width:<?= (int)$settings['logo_header_width'] ?>px;height:<?= (int)$settings['logo_header_height'] ?>px;object-fit:contain;">
     <?php else: ?>Takip Sistemi<?php endif; ?>
