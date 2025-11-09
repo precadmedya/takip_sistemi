@@ -82,12 +82,23 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <input type="file" name="import_file" accept=".csv" required class="form-control d-inline-block" style="width:auto;">
   <button type="submit" name="import" class="btn btn-secondary">CSV İçe Aktar</button>
 </form>
-<table class="table table-bordered">
+<div class="mb-3 mt-3">
+  <input type="text" id="customer-search" class="form-control" placeholder="Müşteri, e-posta, telefon veya şirket ara" autocomplete="off" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
+</div>
+<table class="table table-bordered" id="customers-table">
   <thead>
     <?php
       function sortLink(string $key, string $label, string $currentSort, string $currentDir): string {
-          $dir = ($currentSort === $key && $currentDir === 'ASC') ? 'desc' : 'asc';
-          return '<a href="?sort='.$key.'&dir='.$dir.'">'.htmlspecialchars($label).'</a>';
+          $nextDir = ($currentSort === $key && $currentDir === 'ASC') ? 'desc' : 'asc';
+          $labelEsc = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+          $keyEsc = htmlspecialchars($key, ENT_QUOTES, 'UTF-8');
+          $dirEsc = htmlspecialchars($nextDir, ENT_QUOTES, 'UTF-8');
+          return sprintf(
+              '<a href="?sort=%1$s&dir=%2$s" data-sort="%1$s" data-next-dir="%2$s" data-label="%3$s">%3$s</a>',
+              $keyEsc,
+              $dirEsc,
+              $labelEsc
+          );
       }
     ?>
     <tr>
@@ -121,4 +132,151 @@ $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <?php endforeach; ?>
   </tbody>
 </table>
+<script>
+const customerSearchInput = document.getElementById('customer-search');
+const customerTableBody = document.querySelector('#customers-table tbody');
+const customerSortAnchors = Array.from(document.querySelectorAll('#customers-table thead a'));
+let customerSort = <?= json_encode($sort) ?>;
+let customerDir = <?= json_encode(strtolower($dir)) ?>;
+let customerTimer;
+
+customerSortAnchors.forEach(anchor => {
+  if (!anchor.dataset.label) {
+    anchor.dataset.label = anchor.textContent.trim();
+  }
+});
+
+async function fetchCustomers() {
+  const params = new URLSearchParams();
+  const query = customerSearchInput.value.trim();
+  if (query !== '') {
+    params.set('q', query);
+  }
+  params.set('sort', customerSort);
+  params.set('dir', customerDir);
+  try {
+    const response = await fetch('ajax/customers_search.php?' + params.toString(), {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    if (!response.ok) {
+      throw new Error('Sunucu hatası');
+    }
+    const data = await response.json();
+    renderCustomerRows(data.customers);
+  } catch (error) {
+    customerTableBody.innerHTML = '<tr><td colspan="9" class="text-danger">Müşteri listesi alınamadı.</td></tr>';
+  } finally {
+    syncQueryString();
+    updateSortIndicators();
+  }
+}
+
+function renderCustomerRows(customers) {
+  if (!customers.length) {
+    customerTableBody.innerHTML = '<tr><td colspan="9">Sonuç bulunamadı.</td></tr>';
+    return;
+  }
+  const rows = customers.map(customer => {
+    const created = customer.created_at_formatted || '';
+    return `<tr>
+      <td>${customer.id}</td>
+      <td>${escapeHtml(customer.full_name || '')}</td>
+      <td>${escapeHtml(customer.email || '')}</td>
+      <td>${escapeHtml(customer.phone || '')}</td>
+      <td>${escapeHtml(customer.company || '')}</td>
+      <td>${escapeHtml(customer.address || '')}</td>
+      <td>${customer.balance_formatted}</td>
+      <td>${created}</td>
+      <td>
+        <a href="customer.php?id=${customer.id}" class="btn btn-sm btn-info">Detay</a>
+        <a href="customer_delete.php?id=${customer.id}" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
+      </td>
+    </tr>`;
+  }).join('');
+  customerTableBody.innerHTML = rows;
+}
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+function syncQueryString() {
+  const url = new URL(window.location.href);
+  const query = customerSearchInput.value.trim();
+  if (query !== '') {
+    url.searchParams.set('q', query);
+  } else {
+    url.searchParams.delete('q');
+  }
+  url.searchParams.set('sort', customerSort);
+  url.searchParams.set('dir', customerDir);
+  const queryString = url.searchParams.toString();
+  const newUrl = url.pathname + (queryString ? '?' + queryString : '');
+  window.history.replaceState({}, '', newUrl);
+}
+
+function updateSortIndicators() {
+  customerSortAnchors.forEach(anchor => {
+    const sortKey = anchor.dataset.sort;
+    if (!sortKey) {
+      return;
+    }
+    const isActive = sortKey === customerSort;
+    const nextDir = isActive && customerDir === 'asc' ? 'desc' : 'asc';
+    anchor.dataset.nextDir = nextDir;
+    const label = anchor.dataset.label || anchor.textContent.trim();
+    anchor.textContent = isActive ? `${label} ${customerDir === 'asc' ? '↑' : '↓'}` : label;
+    const th = anchor.closest('th');
+    if (th) {
+      th.setAttribute('aria-sort', isActive ? (customerDir === 'asc' ? 'ascending' : 'descending') : 'none');
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set('sort', sortKey);
+    url.searchParams.set('dir', nextDir);
+    const query = customerSearchInput.value.trim();
+    if (query !== '') {
+      url.searchParams.set('q', query);
+    } else {
+      url.searchParams.delete('q');
+    }
+    const queryString = url.searchParams.toString();
+    anchor.href = url.pathname + (queryString ? '?' + queryString : '');
+  });
+}
+
+customerSearchInput.addEventListener('input', () => {
+  clearTimeout(customerTimer);
+  customerTimer = setTimeout(fetchCustomers, 250);
+});
+
+customerSortAnchors.forEach(anchor => {
+  anchor.addEventListener('click', event => {
+    event.preventDefault();
+    const sortKey = anchor.dataset.sort;
+    if (!sortKey) {
+      return;
+    }
+    if (customerSort === sortKey) {
+      customerDir = customerDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      customerSort = sortKey;
+      customerDir = 'asc';
+    }
+    updateSortIndicators();
+    fetchCustomers();
+  });
+});
+
+updateSortIndicators();
+if (customerSearchInput.value.trim() !== '') {
+  fetchCustomers();
+}
+</script>
 <?php include __DIR__.'/includes/footer.php'; ?>
