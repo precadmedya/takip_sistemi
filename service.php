@@ -13,14 +13,32 @@ $usdRate = getUsdRate($pdo);
 $itemStmt = $pdo->prepare('SELECT si.*, pr.name AS provider_name FROM service_items si LEFT JOIN providers pr ON si.provider_id=pr.id WHERE si.service_id=?');
 $itemStmt->execute([$service['id']]);
 $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
-$total = 0; $vatT=0;
-foreach($items as $it){
-    $line = $it['quantity']*$it['unit_price'];
-    $lineVat = $line*$it['vat_rate']/100;
-    if($it['currency']==='USD'){$line*=$usdRate; $lineVat*=$usdRate;}
-    $total += $line; $vatT += $lineVat;
+$totalTl = 0; $vatTl=0; $totalUsd = 0; $vatUsd = 0;
+foreach($items as $index => $it){
+    $sub = $it['quantity']*$it['unit_price'];
+    $lineVat = $sub*$it['vat_rate']/100;
+    $isUsd = $it['currency']==='USD';
+    $subTl = $isUsd ? $sub*$usdRate : $sub;
+    $vatTlLine = $isUsd ? $lineVat*$usdRate : $lineVat;
+    $items[$index]['line_total_tl'] = $isUsd ? ($sub+$lineVat)*$usdRate : ($sub+$lineVat);
+    $items[$index]['unit_symbol'] = $isUsd ? '$' : '₺';
+    $items[$index]['vat_tl'] = $vatTlLine;
+    if($usdRate>0){
+        $subUsd = $isUsd ? $sub : $sub/$usdRate;
+        $vatUsdLine = $isUsd ? $lineVat : $lineVat/$usdRate;
+        $items[$index]['line_total_usd'] = $subUsd + $vatUsdLine;
+        $items[$index]['vat_usd'] = $vatUsdLine;
+        $totalUsd += $subUsd;
+        $vatUsd += $vatUsdLine;
+    } else {
+        $items[$index]['line_total_usd'] = 0;
+        $items[$index]['vat_usd'] = 0;
+    }
+    $totalTl += $subTl;
+    $vatTl += $vatTlLine;
 }
-$grand = $total + $vatT;
+$grandTl = $totalTl + $vatTl;
+$grandUsd = $usdRate>0 ? $totalUsd + $vatUsd : 0;
 $days = (strtotime($service['due_date']) - time())/86400;
 $badge='success';
 if($days<=30) $badge='info';
@@ -53,31 +71,30 @@ include __DIR__.'/includes/header.php';
 <table class="table table-bordered">
  <thead>
   <tr>
-   <th>Ad</th><th>Miktar</th><th>Birim</th><th>Birim Fiyat</th><th>Döviz</th><th>Sağlayıcı</th><th>KDV</th><th>Açıklama</th><th>Toplam (TL)</th>
+   <th>Ad</th><th>Miktar</th><th>Birim</th><th>Birim Fiyat</th><th>Döviz</th><th>Sağlayıcı</th><th>KDV</th><th>Açıklama</th><th>Toplam (TL / USD)</th>
   </tr>
  </thead>
  <tbody>
   <?php foreach($items as $it): ?>
-  <?php $sub=$it['quantity']*$it['unit_price'];$vat=$sub*$it['vat_rate']/100;$line=$it['currency']=='USD'?($sub+$vat)*$usdRate:($sub+$vat); ?>
   <tr>
    <td><?= htmlspecialchars($it['item_name']) ?></td>
    <td><?= $it['quantity'] ?></td>
    <td><?= htmlspecialchars($it['unit']) ?></td>
-   <td><?= number_format($it['unit_price'],2,',','.') ?></td>
+   <td><?= number_format($it['unit_price'],2,',','.') ?> <?= $it['unit_symbol'] ?></td>
    <td><?= htmlspecialchars($it['currency']) ?></td>
    <td><?= htmlspecialchars($it['provider_name']) ?></td>
-   <td><?= $it['vat_rate'] ?>%</td>
+   <td><?= $it['vat_rate'] ?>%<br><small><?= number_format($it['vat_tl'],2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($it['vat_usd'],2,',','.') ?> $)<?php endif; ?></small></td>
    <td><?= htmlspecialchars($it['description']) ?></td>
-   <td><?= number_format($line,2,',','.') ?></td>
+   <td><?= number_format($it['line_total_tl'],2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($it['line_total_usd'],2,',','.') ?> $)<?php endif; ?></td>
   </tr>
   <?php endforeach; ?>
  </tbody>
 </table>
 <?php endif; ?>
 <div class="text-end">
- <strong>Birim Fiyatı: <?= number_format($total,2,',','.') ?> TL</strong><br>
- <strong>KDV Tutarı: <?= number_format($vatT,2,',','.') ?> TL</strong><br>
- <strong>Genel Toplam: <?= number_format($grand,2,',','.') ?> TL</strong>
+ <strong>Birim Fiyatı: <?= number_format($totalTl,2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($totalUsd,2,',','.') ?> $)<?php endif; ?></strong><br>
+ <strong>KDV Tutarı: <?= number_format($vatTl,2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($vatUsd,2,',','.') ?> $)<?php endif; ?></strong><br>
+ <strong>Genel Toplam: <?= number_format($grandTl,2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($grandUsd,2,',','.') ?> $)<?php endif; ?></strong>
 </div>
 <a href="service_payment.php?service_id=<?= $service['id'] ?>" class="btn btn-primary">Tahsilat Yap</a>
 <a href="send_reminder.php?service_id=<?= $service['id'] ?>" class="btn btn-info">Hatırlatma Maili Gönder</a>

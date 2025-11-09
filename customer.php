@@ -28,12 +28,19 @@ $payments = $payStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $usdRate = getUsdRate($pdo);
 $totalDebt = 0;
+$totalDebtUsd = 0;
 $upcoming = [];
 foreach($services as &$s){
     $s['total_try'] = $s['price_try'] * (1 + $s['vat_rate']/100);
     $s['remaining'] = $s['total_try'] - $s['paid_try'];
+    $s['total_usd'] = $usdRate>0 ? $s['total_try'] / $usdRate : 0;
+    $s['paid_usd'] = $usdRate>0 ? $s['paid_try'] / $usdRate : 0;
+    $s['remaining_usd'] = $usdRate>0 ? $s['remaining'] / $usdRate : 0;
     if($s['remaining'] > 0){
         $totalDebt += $s['remaining'];
+        if($usdRate>0){
+            $totalDebtUsd += $s['remaining'] / $usdRate;
+        }
         if(strtotime($s['due_date']) <= strtotime('+30 days')){
             $upcoming[] = $s;
         }
@@ -57,7 +64,7 @@ include __DIR__.'/includes/header.php';
   <div class="card text-bg-light mb-3">
    <div class="card-body">
     <h5 class="card-title">Toplam Borç</h5>
-    <p class="card-text fw-bold"><?= number_format($totalDebt,2,',','.') ?> ₺</p>
+    <p class="card-text fw-bold"><?= number_format($totalDebt,2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($totalDebtUsd,2,',','.') ?> $)<?php endif; ?></p>
    </div>
   </div>
  </div>
@@ -68,7 +75,7 @@ include __DIR__.'/includes/header.php';
     <?php if($upcoming): ?>
     <ul class="mb-0">
      <?php foreach($upcoming as $u): ?>
-     <li><?= htmlspecialchars($u['site_name']) ?> - <?= date('d.m.Y', strtotime($u['due_date'])) ?> - <?= number_format($u['remaining'],2,',','.') ?> ₺</li>
+     <li><?= htmlspecialchars($u['site_name']) ?> - <?= date('d.m.Y', strtotime($u['due_date'])) ?> - <?= number_format($u['remaining'],2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($u['remaining_usd'],2,',','.') ?> $)<?php endif; ?></li>
      <?php endforeach; ?>
     </ul>
     <?php else: ?>
@@ -91,9 +98,9 @@ include __DIR__.'/includes/header.php';
    <td><?= htmlspecialchars($s['product_name']) ?></td>
    <td><?= htmlspecialchars($s['site_name']) ?></td>
    <td><?= date('d.m.Y', strtotime($s['due_date'])) ?></td>
-   <td><?= number_format($s['total_try'],2,',','.') ?> ₺</td>
-   <td><?= number_format($s['paid_try'],2,',','.') ?> ₺</td>
-   <td><?= number_format($s['remaining'],2,',','.') ?> ₺</td>
+   <td><?= number_format($s['total_try'],2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($s['total_usd'],2,',','.') ?> $)<?php endif; ?></td>
+   <td><?= number_format($s['paid_try'],2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($s['paid_usd'],2,',','.') ?> $)<?php endif; ?></td>
+   <td><?= number_format($s['remaining'],2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($s['remaining_usd'],2,',','.') ?> $)<?php endif; ?></td>
    <td>
     <a href="service.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-info">Detay</a>
     <a href="service_payment.php?service_id=<?= $s['id'] ?>" class="btn btn-sm btn-primary">Tahsilat</a>
@@ -108,13 +115,14 @@ include __DIR__.'/includes/header.php';
 <h2>Tahsilatlar</h2>
 <table class="table table-bordered">
  <thead>
-  <tr><th>Hizmet/Site</th><th>Tutar (TL)</th><th>Para Birimi</th><th>Tarih</th></tr>
+  <tr><th>Hizmet/Site</th><th>Tutar (TL / USD)</th><th>Para Birimi</th><th>Tarih</th></tr>
  </thead>
  <tbody>
   <?php foreach($payments as $p): ?>
   <tr>
    <td><?= htmlspecialchars($p['site_name']) ?></td>
-   <td><?= number_format($p['amount_try'],2,',','.') ?> ₺</td>
+   <?php $amountUsd = $usdRate>0 ? $p['amount_try'] / $usdRate : 0; ?>
+   <td><?= number_format($p['amount_try'],2,',','.') ?> ₺<?php if($usdRate>0): ?> (<?= number_format($amountUsd,2,',','.') ?> $)<?php endif; ?></td>
    <td><?= htmlspecialchars($p['currency']) ?></td>
    <td><?= date('d.m.Y', strtotime($p['created_at'])) ?></td>
   </tr>
