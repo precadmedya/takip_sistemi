@@ -205,9 +205,12 @@ include __DIR__.'/includes/header.php';
   <button type="button" class="btn btn-secondary mb-3" id="addRow">Satır Ekle</button>
   <div class="mb-3 text-end">
     <strong>Toplam Tutar (TL): <span id="total">0</span></strong><br>
+    <strong>Toplam Tutar (USD): <span id="total_usd">-</span></strong><br>
     <strong>KDV Tutarı (TL): <span id="vat_t">0</span></strong><br>
+    <strong>KDV Tutarı (USD): <span id="vat_usd">-</span></strong><br>
     <strong>Güncel Kur: <span id="rate"><?= number_format($usdRate,2,',','.') ?></span></strong><br>
-    <strong>Genel Toplam (TL): <span id="grand">0</span></strong>
+    <strong>Genel Toplam (TL): <span id="grand">0</span></strong><br>
+    <strong>Genel Toplam (USD): <span id="grand_usd">-</span></strong>
   </div>
   <input type="hidden" name="new_products_json" id="new_products_json">
   <button type="submit" class="btn btn-primary">Kaydet</button>
@@ -272,6 +275,8 @@ function updateTotal(){
   var rate = <?= $usdRate ? $usdRate : 0 ?>;
   var totalTl = 0;
   var vatTl = 0;
+  var totalUsd = 0;
+  var vatUsd = 0;
   document.querySelectorAll('#items tbody tr').forEach(function(tr){
     var q = parseFloat(tr.querySelector('.qty').value)||0;
     var p = parseFloat(tr.querySelector('.price').value)||0;
@@ -280,13 +285,25 @@ function updateTotal(){
     var lineSub = q*p;
     var lineVat = lineSub*v/100;
     var lineTl = cur==='USD' ? (lineSub+lineVat)*rate : (lineSub+lineVat);
-    tr.querySelector('.row-total').innerText=lineTl.toFixed(2);
+    var lineUsd = 0;
+    if(rate>0){
+      lineUsd = cur==='USD' ? (lineSub+lineVat) : (lineSub+lineVat)/rate;
+    }
+    tr.querySelector('.row-total').innerText = lineTl.toFixed(2) + ' ₺' + (rate>0 ? ' (' + lineUsd.toFixed(2) + ' $)' : '');
     totalTl += cur==='USD' ? lineSub*rate : lineSub;
     vatTl += cur==='USD' ? lineVat*rate : lineVat;
+    if(rate>0){
+      totalUsd += cur==='USD' ? lineSub : lineSub/rate;
+      vatUsd += cur==='USD' ? lineVat : lineVat/rate;
+    }
   });
   document.getElementById('total').innerText=totalTl.toFixed(2);
+  document.getElementById('total_usd').innerText=rate>0 ? totalUsd.toFixed(2) : '-';
   document.getElementById('vat_t').innerText=vatTl.toFixed(2);
-  document.getElementById('grand').innerText=(totalTl+vatTl).toFixed(2);
+  document.getElementById('vat_usd').innerText=rate>0 ? vatUsd.toFixed(2) : '-';
+  var grandTl = totalTl+vatTl;
+  document.getElementById('grand').innerText=grandTl.toFixed(2);
+  document.getElementById('grand_usd').innerText=rate>0 ? (totalUsd+vatUsd).toFixed(2) : '-';
 }
 
 document.querySelectorAll('#items tbody tr').forEach(initRow);

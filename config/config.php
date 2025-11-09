@@ -8,12 +8,13 @@ return [
         'charset' => 'utf8mb4'
     ],
     'smtp' => [
-        'host' => getenv('SMTP_HOST') ?: 'smtp.yandex.com.tr',
+        'host' => getenv('SMTP_HOST') ?: 'smtp.yandex.com',
         'port' => getenv('SMTP_PORT') ?: 465,
         'encryption' => getenv('SMTP_ENCRYPTION') ?: 'ssl',
-        'username' => getenv('SMTP_USER') ?: 'info@precadmedya.com.tr',
-        'password' => getenv('SMTP_PASS') ?: 'Precadmedya34523',
+        'username' => getenv('SMTP_USER') ?: 'muhasebe@precadmedya.com.tr',
+        'password' => getenv('SMTP_PASS') ?: 'Precadmedya3452323',
         'from_name' => getenv('SMTP_FROM_NAME') ?: 'Precad Medya',
-        'from_email' => getenv('SMTP_FROM_EMAIL') ?: 'info@precadmedya.com.tr'
+        'from_email' => getenv('SMTP_FROM_EMAIL') ?: 'muhasebe@precadmedya.com.tr',
+        'timeout' => getenv('SMTP_TIMEOUT') ?: 20
     ]
 ];
