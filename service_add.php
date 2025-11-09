@@ -1,12 +1,17 @@
 <?php
 require __DIR__.'/includes/auth.php';
 require __DIR__.'/includes/functions.php';
-$customers = $pdo->query("SELECT id, full_name FROM customers")->fetchAll(PDO::FETCH_ASSOC);
 $products = $pdo->query("SELECT id, name, price, currency, vat_rate FROM products")->fetchAll(PDO::FETCH_ASSOC);
 $providers = $pdo->query("SELECT id, name FROM providers")->fetchAll(PDO::FETCH_ASSOC);
 $usdRate = getUsdRate($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $customerId = (int)($_POST['customer_id'] ?? 0);
+    if (!$customerId) {
+        $_SESSION['message'] = 'Lütfen bir müşteri seçin.';
+        header('Location: service_add.php');
+        exit;
+    }
     $start = $_POST['start_date'];
     $due = $_POST['due_date'] ?: date('Y-m-d', strtotime($start.' +1 year'));
     $duration = (int)((strtotime($due) - strtotime($start)) / 86400);
@@ -29,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $stmt = $pdo->prepare("INSERT INTO services (customer_id, product_id, provider_id, site_name, service_type, start_date, due_date, duration, unit, price, currency, vat_rate, price_try, status, notes, reminder_enabled, reminder_days, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'gün', ?, 'TRY', 0, ?, ?, ?, ?, ?, NOW())");
     $stmt->execute([
-        $_POST['customer_id'],
+        $customerId,
         null,
         null,
         $_POST['site_name'],
@@ -78,13 +83,12 @@ include __DIR__.'/includes/header.php';
 ?>
 <h1>Hizmet Ekle</h1>
 <form method="post">
-  <div class="mb-3">
-    <label class="form-label">Müşteri</label>
-    <select name="customer_id" class="form-control" required>
-      <?php foreach ($customers as $c): ?>
-      <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['full_name']) ?></option>
-      <?php endforeach; ?>
-    </select>
+  <div class="mb-3 position-relative" id="customer-picker">
+    <label class="form-label" for="customer_picker_input">Müşteri</label>
+    <input type="hidden" name="customer_id" id="customer_id" required>
+    <input type="text" id="customer_picker_input" class="form-control" placeholder="Müşteri ara" autocomplete="off">
+    <div class="invalid-feedback">Lütfen bir müşteri seçin.</div>
+    <div class="list-group position-absolute w-100 d-none" id="customer_picker_results" style="max-height:200px;overflow:auto;z-index:1000;"></div>
   </div>
   <div class="mb-3">
     <label class="form-label">Hizmet Türü</label>
@@ -160,6 +164,108 @@ include __DIR__.'/includes/header.php';
 var productOptions = '<?php foreach($products as $p){echo "<option value=\"".$p['name']."\" data-price=\"{$p['price']}\" data-currency=\"{$p['currency']}\" data-vat=\"{$p['vat_rate']}\">".htmlspecialchars($p['name'])."</option>";} ?>' + '<option value="__new__">+ Özel Ürün</option>';
 var providerOptions = '<?php foreach($providers as $p){echo "<option value=\"{$p['id']}\">".htmlspecialchars($p['name'])."</option>";} ?>';
 var newProducts = [];
+const customerInput = document.getElementById('customer_picker_input');
+const customerIdField = document.getElementById('customer_id');
+const customerResults = document.getElementById('customer_picker_results');
+let customerLookupTimer;
+
+async function lookupCustomers(query) {
+  const params = new URLSearchParams();
+  if (query.trim() !== '') {
+    params.set('q', query.trim());
+  }
+  params.set('limit', '10');
+  try {
+    const response = await fetch('ajax/customers_search.php?' + params.toString(), {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    if (!response.ok) {
+      throw new Error('Sunucu hatası');
+    }
+    const data = await response.json();
+    renderCustomerResults(data.customers);
+  } catch (error) {
+    customerResults.innerHTML = '<div class="list-group-item text-danger">Müşteri listesi alınamadı.</div>';
+    customerResults.classList.remove('d-none');
+  }
+}
+
+function renderCustomerResults(customers) {
+  customerResults.innerHTML = '';
+  if (!customers.length) {
+    const empty = document.createElement('div');
+    empty.className = 'list-group-item';
+    empty.textContent = 'Sonuç bulunamadı.';
+    customerResults.appendChild(empty);
+    customerResults.classList.remove('d-none');
+    return;
+  }
+  customers.forEach(customer => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'list-group-item list-group-item-action';
+    button.dataset.id = customer.id;
+    button.dataset.name = customer.full_name || '';
+    button.dataset.company = customer.company || '';
+    button.dataset.email = customer.email || '';
+    button.dataset.phone = customer.phone || '';
+
+    const title = document.createElement('div');
+    title.textContent = customer.full_name || '';
+    button.appendChild(title);
+
+    const parts = [customer.company, customer.email, customer.phone].filter(Boolean);
+    if (parts.length) {
+      button.appendChild(document.createElement('br'));
+      const small = document.createElement('small');
+      small.className = 'text-muted';
+      small.textContent = parts.join(' • ');
+      button.appendChild(small);
+    }
+
+    button.addEventListener('click', () => {
+      customerIdField.value = button.dataset.id;
+      const name = button.dataset.name;
+      const descParts = [button.dataset.company, button.dataset.email, button.dataset.phone].filter(Boolean);
+      customerInput.value = descParts.length ? `${name} (${descParts.join(' • ')})` : name;
+      customerResults.classList.add('d-none');
+      customerInput.classList.remove('is-invalid');
+    });
+
+    customerResults.appendChild(button);
+  });
+  customerResults.classList.remove('d-none');
+}
+
+customerInput.addEventListener('input', () => {
+  customerIdField.value = '';
+  customerInput.classList.remove('is-invalid');
+  clearTimeout(customerLookupTimer);
+  customerLookupTimer = setTimeout(() => lookupCustomers(customerInput.value), 250);
+});
+
+customerInput.addEventListener('focus', () => {
+  if (!customerResults.innerHTML.trim()) {
+    lookupCustomers(customerInput.value);
+  } else {
+    customerResults.classList.remove('d-none');
+  }
+});
+
+document.addEventListener('click', (event) => {
+  if (!document.getElementById('customer-picker').contains(event.target)) {
+    customerResults.classList.add('d-none');
+  }
+});
+
+document.querySelector('form').addEventListener('submit', (event) => {
+  if (!customerIdField.value) {
+    event.preventDefault();
+    customerInput.classList.add('is-invalid');
+    customerInput.focus();
+  }
+});
+
 function addRow(){
   var tbody=document.querySelector('#items tbody');
   var tr=document.createElement('tr');

@@ -9,7 +9,10 @@ $usdRate = getUsdRate($pdo);
 ?>
 <h1>Hizmetler</h1>
 <a href="service_add.php" class="btn btn-primary mb-3">Hizmet Ekle</a>
-<table class="table table-bordered">
+<div class="mb-3">
+  <input type="text" id="service-search" class="form-control" placeholder="Hizmet, müşteri veya alan adı ara" autocomplete="off">
+</div>
+<table class="table table-bordered" id="services-table">
   <thead>
     <tr>
        <th>ID</th>
@@ -54,4 +57,78 @@ $usdRate = getUsdRate($pdo);
   <?php endforeach; ?>
   </tbody>
 </table>
+<script>
+const serviceSearchInput = document.getElementById('service-search');
+const serviceTableBody = document.querySelector('#services-table tbody');
+let serviceTimer;
+
+async function fetchServices() {
+  const params = new URLSearchParams();
+  if (serviceSearchInput.value.trim() !== '') {
+    params.set('q', serviceSearchInput.value.trim());
+  }
+  try {
+    const response = await fetch('ajax/services_search.php?' + params.toString(), {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    if (!response.ok) {
+      throw new Error('Sunucu hatası');
+    }
+    const data = await response.json();
+    renderServiceRows(data.services);
+  } catch (error) {
+    serviceTableBody.innerHTML = '<tr><td colspan="14" class="text-danger">Hizmet listesi alınamadı.</td></tr>';
+  }
+}
+
+function renderServiceRows(services) {
+  if (!services.length) {
+    serviceTableBody.innerHTML = '<tr><td colspan="14">Sonuç bulunamadı.</td></tr>';
+    return;
+  }
+  const rows = services.map(service => {
+    const start = service.start_date_formatted || '';
+    const due = service.due_date_formatted || '';
+    const created = service.created_at_formatted || '';
+    return `<tr>
+      <td>${service.id}</td>
+      <td>${escapeHtml(service.full_name || '')}</td>
+      <td>${escapeHtml(service.service_type || '')}</td>
+      <td>${escapeHtml(service.site_name || '')}</td>
+      <td>${start}</td>
+      <td>${due}</td>
+      <td>${service.price_display}</td>
+      <td>${service.price_try_display}</td>
+      <td>${service.vat_rate}%</td>
+      <td>${service.total_display}</td>
+      <td>${escapeHtml(service.status || '')}</td>
+      <td>${escapeHtml(service.notes || '')}</td>
+      <td>${created}</td>
+      <td>
+        <a href="service.php?id=${service.id}" class="btn btn-sm btn-info">Detay</a>
+        <a href="service_payment.php?service_id=${service.id}" class="btn btn-sm btn-primary">Tahsilat</a>
+        <a href="service_edit.php?id=${service.id}" class="btn btn-sm btn-warning">Düzenle</a>
+        <a href="service_delete.php?id=${service.id}" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
+      </td>
+    </tr>`;
+  }).join('');
+  serviceTableBody.innerHTML = rows;
+}
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+serviceSearchInput.addEventListener('input', () => {
+  clearTimeout(serviceTimer);
+  serviceTimer = setTimeout(fetchServices, 250);
+});
+</script>
 <?php include __DIR__.'/includes/footer.php'; ?>
