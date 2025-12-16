@@ -50,6 +50,7 @@ $usdRate = getUsdRate($pdo);
       <td>
         <a href="service.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-info">Detay</a>
         <a href="service_payment.php?service_id=<?= $s['id'] ?>" class="btn btn-sm btn-primary">Tahsilat</a>
+        <button type="button" class="btn btn-sm btn-success renew-btn" data-service-id="<?= $s['id'] ?>" title="Hizmeti Yenile">↻</button>
         <a href="service_edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-warning">Düzenle</a>
         <a href="service_delete.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
       </td>
@@ -57,6 +58,45 @@ $usdRate = getUsdRate($pdo);
   <?php endforeach; ?>
   </tbody>
 </table>
+<div class="modal fade" id="renewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Hizmeti Yenile</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <div id="renewAlert" class="alert alert-danger d-none"></div>
+        <p class="mb-1"><strong>Müşteri:</strong> <span id="renewCustomer"></span></p>
+        <p class="mb-1"><strong>Hizmet:</strong> <span id="renewService"></span></p>
+        <p class="mb-1"><strong>Mevcut Son Ödeme:</strong> <span id="renewDue"></span></p>
+        <p class="mb-3"><strong>Yıllık Tutar:</strong> <span id="renewPrice"></span></p>
+        <form id="renewForm">
+          <input type="hidden" name="service_id" id="renewServiceId">
+          <div class="mb-3">
+            <label class="form-label" for="renewYears">Kaç Yıl Yenilensin?</label>
+            <select id="renewYears" name="years" class="form-control">
+              <option value="1">1 Yıl</option>
+              <option value="2">2 Yıl</option>
+              <option value="3">3 Yıl</option>
+              <option value="4">4 Yıl</option>
+              <option value="5">5 Yıl</option>
+            </select>
+          </div>
+          <div class="alert alert-secondary">
+            <div><strong>Eski Borç Tahsilatı:</strong> <span id="renewDebt"></span></div>
+            <div><strong>Yenileme (KDV dahil):</strong> <span id="renewTotal"></span></div>
+            <div><strong>Yeni Son Ödeme Tarihi:</strong> <span id="renewNewDue"></span></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+        <button type="submit" form="renewForm" class="btn btn-success">Tahsil Et ve Yenile</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 const serviceSearchInput = document.getElementById('service-search');
 const serviceTableBody = document.querySelector('#services-table tbody');
@@ -107,6 +147,7 @@ function renderServiceRows(services) {
       <td>
         <a href="service.php?id=${service.id}" class="btn btn-sm btn-info">Detay</a>
         <a href="service_payment.php?service_id=${service.id}" class="btn btn-sm btn-primary">Tahsilat</a>
+        <button type="button" class="btn btn-sm btn-success renew-btn" data-service-id="${service.id}" title="Hizmeti Yenile">↻</button>
         <a href="service_edit.php?id=${service.id}" class="btn btn-sm btn-warning">Düzenle</a>
         <a href="service_delete.php?id=${service.id}" class="btn btn-sm btn-danger" onclick="return confirm('Silinsin mi?');">Sil</a>
       </td>
@@ -114,6 +155,99 @@ function renderServiceRows(services) {
   }).join('');
   serviceTableBody.innerHTML = rows;
 }
+
+const renewModalEl = document.getElementById('renewModal');
+const renewModal = new bootstrap.Modal(renewModalEl);
+const renewAlert = document.getElementById('renewAlert');
+const renewForm = document.getElementById('renewForm');
+const renewYears = document.getElementById('renewYears');
+let renewData = null;
+
+function resetRenewModal() {
+  renewAlert.classList.add('d-none');
+  renewAlert.textContent = '';
+  renewData = null;
+  renewForm.reset();
+  document.getElementById('renewCustomer').textContent = '';
+  document.getElementById('renewService').textContent = '';
+  document.getElementById('renewDue').textContent = '';
+  document.getElementById('renewPrice').textContent = '';
+  document.getElementById('renewDebt').textContent = '';
+  document.getElementById('renewTotal').textContent = '';
+  document.getElementById('renewNewDue').textContent = '';
+}
+
+function formatDate(date) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('tr-TR');
+}
+
+function updateRenewSummary() {
+  if (!renewData) return;
+  const years = parseInt(renewYears.value, 10) || 1;
+  const base = renewData.price * years;
+  const withVat = base * (1 + (renewData.vat_rate || 0) / 100);
+  const startDate = renewData.due_date ? new Date(renewData.due_date + 'T00:00:00') : new Date();
+  startDate.setFullYear(startDate.getFullYear() + years);
+
+  document.getElementById('renewTotal').textContent = `${withVat.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})} ${renewData.currency}`;
+  document.getElementById('renewNewDue').textContent = formatDate(startDate);
+}
+
+async function openRenewModal(serviceId) {
+  resetRenewModal();
+  document.getElementById('renewServiceId').value = serviceId;
+  try {
+    const response = await fetch('ajax/service_renew.php?id=' + serviceId, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+    if (!response.ok) {
+      throw new Error('Bilgiler alınamadı');
+    }
+    const data = await response.json();
+    renewData = data.service;
+    document.getElementById('renewCustomer').textContent = data.service.customer;
+    document.getElementById('renewService').textContent = `${data.service.service_type} / ${data.service.site_name}`;
+    document.getElementById('renewDue').textContent = data.service.due_date_formatted;
+    document.getElementById('renewPrice').textContent = `${data.service.price_with_vat_display} (KDV dahil)`;
+    document.getElementById('renewDebt').textContent = data.service.remaining_display;
+    updateRenewSummary();
+    renewModal.show();
+  } catch (error) {
+    alert('Yenileme bilgileri alınamadı.');
+  }
+}
+
+document.body.addEventListener('click', (event) => {
+  const target = event.target.closest('.renew-btn');
+  if (target) {
+    openRenewModal(target.dataset.serviceId);
+  }
+});
+
+renewYears.addEventListener('change', updateRenewSummary);
+
+renewForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  renewAlert.classList.add('d-none');
+  renewAlert.textContent = '';
+  const formData = new FormData(renewForm);
+  try {
+    const response = await fetch('ajax/service_renew.php', {
+      method: 'POST',
+      headers: {'X-Requested-With': 'XMLHttpRequest'},
+      body: formData
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'İşlem başarısız.');
+    }
+    renewModal.hide();
+    location.reload();
+  } catch (error) {
+    renewAlert.textContent = error.message || 'İşlem sırasında hata oluştu.';
+    renewAlert.classList.remove('d-none');
+  }
+});
 
 function escapeHtml(text) {
   const map = {
