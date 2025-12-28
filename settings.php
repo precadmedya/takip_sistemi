@@ -2,7 +2,7 @@
 require __DIR__ . '/includes/auth.php';
 
 $settings = [];
-$keys = ['logo','logo_login_width','logo_login_height','logo_header_width','logo_header_height','footer_text','footer_logo','footer_logo_width','footer_logo_height'];
+$keys = ['logo','logo_login_width','logo_login_height','logo_header_width','logo_header_height','footer_text','footer_logo','footer_logo_width','footer_logo_height','favicon'];
 foreach ($keys as $k) {
     $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=?');
     $stmt->execute([$k]);
@@ -29,6 +29,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$path]);
         $settings['footer_logo']=$path;
     }
+    if (!empty($_FILES['favicon']['tmp_name'])) {
+        $ext = strtolower(pathinfo($_FILES['favicon']['name'], PATHINFO_EXTENSION));
+        if ($ext === 'png') {
+            $dir = 'uploads';
+            if (!is_dir($dir)) mkdir($dir, 0777, true);
+            $path = $dir . '/' . basename($_FILES['favicon']['name']);
+            move_uploaded_file($_FILES['favicon']['tmp_name'], $path);
+            $stmt = $pdo->prepare("REPLACE INTO settings (`key`, value) VALUES ('favicon', ?)");
+            $stmt->execute([$path]);
+            $settings['favicon'] = $path;
+        }
+    }
     foreach (['logo_login_width','logo_login_height','logo_header_width','logo_header_height','footer_text','footer_logo','footer_logo_width','footer_logo_height'] as $k) {
         if (isset($_POST[$k])) {
             $stmt = $pdo->prepare("REPLACE INTO settings (`key`, value) VALUES (?, ?)");
@@ -50,6 +62,15 @@ include __DIR__ . '/includes/header.php';
   <?php if ($settings['logo']): ?>
   <div class="mb-3">
     <img src="/<?= htmlspecialchars($settings['logo']) ?>" alt="Logo" style="max-width:200px;">
+  </div>
+  <?php endif; ?>
+  <div class="mb-3">
+    <label class="form-label">Favicon (PNG)</label>
+    <input type="file" name="favicon" class="form-control" accept="image/png">
+  </div>
+  <?php if ($settings['favicon']): ?>
+  <div class="mb-3">
+    <img src="/<?= htmlspecialchars($settings['favicon']) ?>" alt="Favicon" style="width:32px;height:32px;">
   </div>
   <?php endif; ?>
   <div class="row">

@@ -148,6 +148,7 @@ INSERT INTO settings (`key`, value) VALUES
 ('logo_login_height','40'),
 ('logo_header_width','120'),
 ('logo_header_height','40'),
+('favicon',''),
 ('mail_logo',''),
 ('smtp_host','smtp.yandex.com.tr'),
 ('smtp_port','465'),
