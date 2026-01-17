@@ -10,18 +10,31 @@
 <?php
 require_once __DIR__.'/functions.php';
 $settings = [];
-foreach (['logo','logo_header_width','logo_header_height'] as $k) {
-    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=?');
+foreach (['logo', 'logo_header_width', 'logo_header_height'] as $k) {
+    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key` = ?');
     $stmt->execute([$k]);
     $settings[$k] = $stmt->fetchColumn() ?: '';
 }
+$headerLogoWidth = isset($settings['logo_header_width']) ? (int)$settings['logo_header_width'] : 0;
+$headerLogoHeight = isset($settings['logo_header_height']) ? (int)$settings['logo_header_height'] : 0;
+$headerLogoStyleParts = ['max-width:160px'];
+if ($headerLogoWidth > 0) {
+    $headerLogoStyleParts[] = 'width:' . $headerLogoWidth . 'px';
+}
+if ($headerLogoHeight > 0) {
+    $headerLogoStyleParts[] = 'height:' . $headerLogoHeight . 'px';
+} else {
+    $headerLogoStyleParts[] = 'height:auto';
+}
+$headerLogoStyleParts[] = 'object-fit:contain';
+$headerLogoStyle = implode(';', $headerLogoStyleParts);
 $currentRate = getUsdRate($pdo);
 ?>
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
  <div class="container-fluid">
   <a class="navbar-brand me-3" href="dashboard.php">
     <?php if ($settings['logo']): ?>
-      <img src="<?= htmlspecialchars($settings['logo']) ?>" alt="Logo" style="width:<?= (int)$settings['logo_header_width'] ?>px;height:<?= (int)$settings['logo_header_height'] ?>px;object-fit:contain;">
+      <img src="<?= htmlspecialchars($settings['logo']) ?>" alt="Logo" style="<?= htmlspecialchars($headerLogoStyle, ENT_QUOTES) ?>">
     <?php else: ?>Takip Sistemi<?php endif; ?>
   </a>
   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
