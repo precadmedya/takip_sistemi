@@ -9,11 +9,12 @@ if (isset($_SESSION['user_id']) && (time() - ($_SESSION['last_active'] ?? 0) < 1
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $stmt = $pdo->prepare('SELECT id, password FROM users WHERE email = ?');
+    $stmt = $pdo->prepare('SELECT id, password, role FROM users WHERE email = ?');
     $stmt->execute([$_POST['email']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($user && password_verify($_POST['password'], $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
+        $_SESSION['role'] = $user['role'];
         $_SESSION['last_active'] = time();
         header('Location: dashboard.php');
         exit;
@@ -24,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $settings = [];
 foreach (['logo','logo_login_width','logo_login_height'] as $k) {
-    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=?');
+    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=? AND user_id IS NULL');
     $stmt->execute([$k]);
     $settings[$k] = $stmt->fetchColumn() ?: '';
 }

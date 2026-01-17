@@ -1,5 +1,9 @@
 <?php
 require __DIR__ . '/includes/auth.php';
+if($_SESSION['role'] !== 'admin') {
+    header('Location: dashboard.php');
+    exit;
+}
 
 $action = $_GET['action'] ?? '';
 $id = $_GET['id'] ?? null;
@@ -82,7 +86,7 @@ include __DIR__ . '/includes/header.php';
     <label class="form-label">Rol</label>
     <select name="role" class="form-control">
       <option value="admin" <?= isset($editUser) && $editUser['role']==='admin' ? 'selected' : '' ?>>Admin</option>
-      <option value="user" <?= isset($editUser) && $editUser['role']==='user' ? 'selected' : '' ?>>User</option>
+      <option value="firma" <?= isset($editUser) && $editUser['role']==='firma' ? 'selected' : '' ?>>Firma</option>
     </select>
   </div>
   <button type="submit" class="btn btn-primary">Kaydet</button>

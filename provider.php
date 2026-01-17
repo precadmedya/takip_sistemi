@@ -2,20 +2,39 @@
 require __DIR__.'/includes/auth.php';
 require __DIR__.'/includes/functions.php';
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt = $pdo->prepare('SELECT * FROM providers WHERE id=?');
-$stmt->execute([$id]);
+$sql = 'SELECT * FROM providers WHERE id=?';
+$params = [$id];
+if($_SESSION['role'] !== 'admin') {
+    $sql .= ' AND user_id=?';
+    $params[] = $_SESSION['user_id'];
+}
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $provider = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$provider){
     header('Location: providers.php');
     exit;
 }
 $usdRate = getUsdRate($pdo);
-$totPurch = (float)$pdo->query("SELECT SUM(price_try) FROM provider_purchases WHERE provider_id={$id}")->fetchColumn();
-$totPay = (float)$pdo->query("SELECT SUM(amount_try) FROM provider_payments WHERE provider_id={$id}")->fetchColumn();
+if($_SESSION['role'] === 'admin') {
+    $stmtTmp = $pdo->prepare("SELECT SUM(price_try) FROM provider_purchases WHERE provider_id=?");
+    $stmtTmp->execute([$id]);
+    $totPurch = (float)$stmtTmp->fetchColumn();
+    $stmtTmp = $pdo->prepare("SELECT SUM(amount_try) FROM provider_payments WHERE provider_id=?");
+    $stmtTmp->execute([$id]);
+    $totPay = (float)$stmtTmp->fetchColumn();
+} else {
+    $stmtTmp = $pdo->prepare("SELECT SUM(price_try) FROM provider_purchases WHERE provider_id=? AND user_id=?");
+    $stmtTmp->execute([$id, $_SESSION['user_id']]);
+    $totPurch = (float)$stmtTmp->fetchColumn();
+    $stmtTmp = $pdo->prepare("SELECT SUM(amount_try) FROM provider_payments WHERE provider_id=? AND user_id=?");
+    $stmtTmp->execute([$id, $_SESSION['user_id']]);
+    $totPay = (float)$stmtTmp->fetchColumn();
+}
 $balance = $totPurch - $totPay;
 if($balance < 0) $balance = 0;
 if($_SERVER['REQUEST_METHOD']==='POST' && !empty($_POST['item_name'])){
-$ins = $pdo->prepare('INSERT INTO provider_purchases(provider_id,item_name,quantity,unit,unit_price,vat_rate,currency,purchase_date,payment_date,price_try,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+$ins = $pdo->prepare('INSERT INTO provider_purchases(provider_id,item_name,quantity,unit,unit_price,vat_rate,currency,purchase_date,payment_date,price_try,notes,user_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
     foreach($_POST['item_name'] as $i=>$name){
         if(trim($name)=='') continue;
         $qty = (int)($_POST['quantity'][$i] ?? 1);
@@ -28,17 +47,17 @@ $ins = $pdo->prepare('INSERT INTO provider_purchases(provider_id,item_name,quant
         $line = $qty*$price;
         $lineVat = $line*$vat/100;
         $try = $cur==='USD' ? ($line+$lineVat)*$usdRate : ($line+$lineVat);
-        $ins->execute([$id,$name,$qty,$unit,$price,$vat,$cur,$pdate,$paydate,$try,$_POST['notes'][$i] ?? '']);
+        $ins->execute([$id,$name,$qty,$unit,$price,$vat,$cur,$pdate,$paydate,$try,$_POST['notes'][$i] ?? '',$_SESSION['user_id']]);
     }
     $_SESSION['message']='Satın alım kaydedildi';
     header('Location: provider.php?id='.$id);
     exit;
 }
-$purchasesStmt = $pdo->prepare('SELECT * FROM provider_purchases WHERE provider_id=? ORDER BY purchase_date DESC');
-$purchasesStmt->execute([$id]);
+$purchasesStmt = $pdo->prepare($_SESSION['role']==='admin' ? 'SELECT * FROM provider_purchases WHERE provider_id=? ORDER BY purchase_date DESC' : 'SELECT * FROM provider_purchases WHERE provider_id=? AND user_id=? ORDER BY purchase_date DESC');
+$purchasesStmt->execute($_SESSION['role']==='admin' ? [$id] : [$id, $_SESSION['user_id']]);
 $purchases = $purchasesStmt->fetchAll(PDO::FETCH_ASSOC);
-$payStmt = $pdo->prepare('SELECT * FROM provider_payments WHERE provider_id=? ORDER BY pay_date DESC');
-$payStmt->execute([$id]);
+$payStmt = $pdo->prepare($_SESSION['role']==='admin' ? 'SELECT * FROM provider_payments WHERE provider_id=? ORDER BY pay_date DESC' : 'SELECT * FROM provider_payments WHERE provider_id=? AND user_id=? ORDER BY pay_date DESC');
+$payStmt->execute($_SESSION['role']==='admin' ? [$id] : [$id, $_SESSION['user_id']]);
 $payments = $payStmt->fetchAll(PDO::FETCH_ASSOC);
 include __DIR__.'/includes/header.php';
 ?>

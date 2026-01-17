@@ -11,8 +11,8 @@
 require_once __DIR__.'/functions.php';
 $settings = [];
 foreach (['logo','logo_header_width','logo_header_height'] as $k) {
-    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=?');
-    $stmt->execute([$k]);
+    $stmt = $pdo->prepare('SELECT value FROM settings WHERE `key`=? AND (user_id IS NULL OR user_id=?) ORDER BY user_id DESC LIMIT 1');
+    $stmt->execute([$k, $_SESSION['user_id']]);
     $settings[$k] = $stmt->fetchColumn() ?: '';
 }
 $currentRate = getUsdRate($pdo);
@@ -40,7 +40,9 @@ $currentRate = getUsdRate($pdo);
       <ul class="dropdown-menu">
         <li><a class="dropdown-item" href="settings.php">Genel Ayarlar</a></li>
         <li><a class="dropdown-item" href="email_settings.php">E-posta Ayarları</a></li>
+        <?php if($_SESSION['role']==='admin'): ?>
         <li><a class="dropdown-item" href="users.php">Kullanıcılar</a></li>
+        <?php endif; ?>
       </ul>
     </li>
    </ul>

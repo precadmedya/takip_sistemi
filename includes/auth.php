@@ -11,4 +11,10 @@ if (!isset($_SESSION['user_id']) || (time() - ($_SESSION['last_active'] ?? 0) > 
 }
 
 $_SESSION['last_active'] = time();
+
+if (!isset($_SESSION['role'])) {
+    $stmt = $pdo->prepare('SELECT role FROM users WHERE id=?');
+    $stmt->execute([$_SESSION['user_id']]);
+    $_SESSION['role'] = $stmt->fetchColumn() ?: 'firma';
+}
 ?>

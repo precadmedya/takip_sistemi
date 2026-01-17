@@ -24,10 +24,10 @@ function getUsdRate(PDO $pdo): float {
 function getEmailSettings(PDO $pdo): array {
     $defaults = include __DIR__ . '/../config/config.php';
     $settings = [];
-    $stmt = $pdo->prepare("SELECT `key`, value FROM settings WHERE `key` IN ('smtp_host','smtp_port','smtp_encryption','smtp_user','smtp_pass','smtp_from_name','smtp_from_email','mail_logo')");
-    $stmt->execute();
-    foreach($stmt->fetchAll(PDO::FETCH_KEY_PAIR) as $k=>$v){
-        $settings[$k] = $v;
+    $stmt = $pdo->prepare("SELECT `key`, value FROM settings WHERE `key` IN ('smtp_host','smtp_port','smtp_encryption','smtp_user','smtp_pass','smtp_from_name','smtp_from_email','mail_logo') AND (user_id IS NULL OR user_id=?) ORDER BY user_id");
+    $stmt->execute([$_SESSION['user_id'] ?? null]);
+    foreach($stmt->fetchAll(PDO::FETCH_ASSOC) as $row){
+        $settings[$row['key']] = $row['value'];
     }
     return [
         'host' => $settings['smtp_host'] ?? $defaults['smtp']['host'],

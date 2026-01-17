@@ -5,8 +5,14 @@ $action = $_GET['action'] ?? '';
 $id = $_GET['id'] ?? null;
 
 if ($action === 'delete' && $id) {
-    $stmt = $pdo->prepare('DELETE FROM providers WHERE id=?');
-    $stmt->execute([$id]);
+    $sql = 'DELETE FROM providers WHERE id=?';
+    $params = [$id];
+    if($_SESSION['role'] !== 'admin') {
+        $sql .= ' AND user_id=?';
+        $params[] = $_SESSION['user_id'];
+    }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     header('Location: providers.php');
     exit;
 }
@@ -15,11 +21,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
     $website = $_POST['website'];
     if ($action === 'edit' && $id) {
-        $stmt = $pdo->prepare('UPDATE providers SET name=?, website=? WHERE id=?');
-        $stmt->execute([$name, $website, $id]);
+        $sql = 'UPDATE providers SET name=?, website=? WHERE id=?';
+        $params = [$name, $website, $id];
+        if($_SESSION['role'] !== 'admin') {
+            $sql .= ' AND user_id=?';
+            $params[] = $_SESSION['user_id'];
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
     } else {
-        $stmt = $pdo->prepare('INSERT INTO providers (name, website) VALUES (?, ?)');
-        $stmt->execute([$name, $website]);
+        $stmt = $pdo->prepare('INSERT INTO providers (name, website, user_id) VALUES (?, ?, ?)');
+        $stmt->execute([$name, $website, $_SESSION['user_id']]);
     }
     header('Location: providers.php');
     exit;
@@ -27,12 +39,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $edit = null;
 if ($action === 'edit' && $id) {
-    $stmt = $pdo->prepare('SELECT * FROM providers WHERE id=?');
-    $stmt->execute([$id]);
+    $sql = 'SELECT * FROM providers WHERE id=?';
+    $params = [$id];
+    if($_SESSION['role'] !== 'admin') {
+        $sql .= ' AND user_id=?';
+        $params[] = $_SESSION['user_id'];
+    }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $edit = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-$stmt = $pdo->query('SELECT p.*, (SELECT IFNULL(SUM(price_try),0) FROM provider_purchases WHERE provider_id=p.id) - (SELECT IFNULL(SUM(amount_try),0) FROM provider_payments WHERE provider_id=p.id) AS total_due FROM providers p ORDER BY p.id DESC');
+if($_SESSION['role'] === 'admin') {
+    $stmt = $pdo->query('SELECT p.*, (SELECT IFNULL(SUM(price_try),0) FROM provider_purchases WHERE provider_id=p.id) - (SELECT IFNULL(SUM(amount_try),0) FROM provider_payments WHERE provider_id=p.id) AS total_due FROM providers p ORDER BY p.id DESC');
+} else {
+    $stmt = $pdo->prepare('SELECT p.*, (SELECT IFNULL(SUM(price_try),0) FROM provider_purchases WHERE provider_id=p.id AND user_id=?) - (SELECT IFNULL(SUM(amount_try),0) FROM provider_payments WHERE provider_id=p.id AND user_id=?) AS total_due FROM providers p WHERE p.user_id=? ORDER BY p.id DESC');
+    $stmt->execute([$_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id']]);
+}
 $providers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 include __DIR__ . '/includes/header.php';
